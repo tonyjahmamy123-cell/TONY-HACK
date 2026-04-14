@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TONY-HACK | Campagne Optimiser</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Inter", sans-serif; background: #0a0e14; color: #e0e0e0; }
+        .app { display: flex; min-height: 100vh; }
+        
+        .sidebar {
+            width: 300px; background: linear-gradient(180deg, #1a1f2a 0%, #0f1419 100%);
+            border-right: 1px solid #2a3342; position: fixed; top: 0; left: 0; bottom: 0;
+            padding: 24px 20px; overflow-y: auto;
+        }
+        .logo h2 { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #e94560, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo p { color: #6b7a8f; font-size: 11px; margin-top: 4px; }
+        .version-tag { display: inline-block; background: #e94560; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-top: 6px; }
+        .user-profile { display: flex; align-items: center; gap: 14px; padding: 20px 0; border-bottom: 1px solid #2a3342; }
+        .avatar { width: 48px; height: 48px; background: linear-gradient(135deg, #e94560, #ff6b6b); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; color: white; background-size: cover; }
+        .user-info h4 { font-size: 15px; font-weight: 600; }
+        .user-info p { font-size: 12px; color: #e94560; }
+        .sidebar-nav { flex: 1; padding: 24px 0; }
+        .nav-item { display: flex; align-items: center; gap: 14px; padding: 14px 18px; color: #8a9ab0; text-decoration: none; border-radius: 12px; margin-bottom: 6px; transition: all 0.3s; }
+        .nav-item i { width: 26px; font-size: 20px; }
+        .nav-item:hover { background: #2a3342; color: white; }
+        .nav-item.active { background: #e94560; color: white; }
+        .nav-divider { margin: 20px 0; border-top: 1px solid #2a3342; }
+        
+        .main-content { flex: 1; margin-left: 300px; padding: 32px 40px; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+        .header h1 { font-size: 32px; font-weight: 700; color: white; }
+        .header h1 i { color: #e94560; margin-right: 12px; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: #1a1f2a; border: 1px solid #2a3342; border-radius: 16px; padding: 20px; text-align: center; }
+        .stat-value { font-size: 28px; font-weight: 700; color: #e94560; }
+        .stat-label { color: #8a9ab0; font-size: 12px; text-transform: uppercase; }
+        
+        .tabs { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid #2a3342; }
+        .tab { padding: 14px 28px; color: #8a9ab0; font-size: 15px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .tab i { margin-right: 8px; }
+        .tab.active { color: #e94560; border-bottom-color: #e94560; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        
+        .panel { background: #1a1f2a; border: 1px solid #2a3342; border-radius: 20px; padding: 32px; }
+        .panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+        .panel-header i { color: #e94560; font-size: 24px; }
+        .panel-header h2 { color: white; font-size: 22px; font-weight: 600; }
+        
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; color: #8a9ab0; font-size: 12px; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 14px 16px; background: #0f1419; border: 1px solid #2a3342; border-radius: 10px; color: white; font-size: 14px; outline: none; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #e94560; }
+        
+        .email-list-container { background: #0f1419; border: 1px solid #2a3342; border-radius: 10px; padding: 16px; min-height: 120px; max-height: 200px; overflow-y: auto; margin-bottom: 20px; }
+        .email-tag { display: inline-block; background: #2a3342; padding: 6px 14px; border-radius: 20px; font-size: 12px; margin: 4px; color: white; }
+        .email-tag i { margin-left: 8px; cursor: pointer; color: #ef4444; }
+        
+        .upload-area { border: 2px dashed #2a3342; border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; margin-bottom: 20px; }
+        .upload-area:hover { border-color: #e94560; background: rgba(233,69,96,0.05); }
+        .upload-area i { font-size: 32px; color: #6b7a8f; margin-bottom: 10px; }
+        
+        .btn-primary { background: linear-gradient(135deg, #e94560, #ff6b6b); color: white; border: none; padding: 16px 32px; border-radius: 12px; font-weight: 600; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: all 0.3s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(233,69,96,0.3); }
+        .btn-secondary { background: #2a3342; color: #8a9ab0; border: none; padding: 14px 28px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .btn-secondary:hover { background: #3a4555; color: white; }
+        
+        .progress-section { margin-top: 24px; display: none; }
+        .progress-bar { height: 10px; background: #2a3342; border-radius: 5px; overflow: hidden; margin-bottom: 12px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #e94560, #ff6b6b); width: 0%; transition: width 0.3s; }
+        .progress-stats { display: flex; justify-content: space-between; color: #8a9ab0; font-size: 13px; }
+        
+        .url-preview { margin-top: 24px; padding: 20px; background: #0f1419; border: 1px solid #2a3342; border-radius: 12px; display: none; }
+        .url-box { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+        .url-box code { flex: 1; padding: 12px; background: #1a1f2a; border-radius: 8px; font-family: monospace; color: #e94560; word-break: break-all; }
+        .qr-container { text-align: center; margin-top: 16px; }
+        .qr-container img { width: 150px; height: 150px; background: white; padding: 10px; border-radius: 12px; }
+        .btn-copy { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        
+        .history-list { max-height: 200px; overflow-y: auto; }
+        .history-item { padding: 12px; border-bottom: 1px solid #2a3342; display: flex; justify-content: space-between; }
+        .history-success { color: #10b981; }
+        .history-failed { color: #ef4444; }
+        
+        .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1f2a; border: 1px solid #e94560; border-radius: 12px; padding: 16px 20px; color: white; display: none; align-items: center; gap: 12px; z-index: 9999; }
+        .toast.show { display: flex; }
+        .toast i { color: #10b981; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="logo"><h2>🔴 TONY-HACK</h2><p>ULTRA PRO v5.0</p><span class="version-tag">ENTERPRISE</span></div>
+            <div class="user-profile">
+                <div class="avatar" id="sidebarAvatar">A</div>
+                <div class="user-info"><h4 id="sidebarName">Admin</h4><p>Super Admin</p></div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="/campaigns" class="nav-item active"><i class="fas fa-bullseye"></i> Campagne Optimiser</a>
+                <a href="/builder" class="nav-item"><i class="fas fa-code"></i> Code Editor</a>
+                <a href="/templates" class="nav-item"><i class="fas fa-file-code"></i> Templates</a>
+                <a href="/statistics" class="nav-item"><i class="fas fa-chart-bar"></i> Statistiques</a>
+                <a href="/logs" class="nav-item"><i class="fas fa-history"></i> Logs</a>
+                <div class="nav-divider"></div>
+                <a href="/settings" class="nav-item"><i class="fas fa-cog"></i> Paramètres</a>
+                <a href="/profile" class="nav-item"><i class="fas fa-user"></i> Profil</a>
+                <a href="#" class="nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <header class="header">
+                <h1><i class="fas fa-bullseye"></i> Campagne Optimiser v5.0</h1>
+            </header>
+            
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="totalSent">0</div><div class="stat-label">Total envoyés</div></div>
+                <div class="stat-card"><div class="stat-value" id="totalSuccess">0</div><div class="stat-label">Succès</div></div>
+                <div class="stat-card"><div class="stat-value" id="totalFailed">0</div><div class="stat-label">Échecs</div></div>
+                <div class="stat-card"><div class="stat-value" id="todaySent">0</div><div class="stat-label">Aujourd'hui</div></div>
+                <div class="stat-card"><div class="stat-value" id="templateCount">0</div><div class="stat-label">Templates actifs</div></div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="sender"><i class="fas fa-paper-plane"></i> Envoyer</div>
+                <div class="tab" data-tab="generator"><i class="fas fa-link"></i> Générateur</div>
+                <div class="tab" data-tab="history"><i class="fas fa-history"></i> Historique</div>
+            </div>
+            
+            <div class="tab-pane active" id="tab-sender">
+                <div class="panel">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Template</label>
+                            <select id="templateSelect"><option value="">-- Sélectionner --</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nom cible ({{nom}})</label>
+                            <input type="text" id="targetName" placeholder="Ex: Jean Dupont">
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Sujet</label><input type="text" id="emailSubject" value="⚠️ Alerte de sécurité"></div>
+                    <div class="form-group"><label>Message</label><textarea id="emailMessage" rows="3">Bonjour {{nom}},<br><br>Nous avons détecté une activité suspecte sur votre compte. Veuillez vérifier votre identité en cliquant sur le lien ci-dessous :<br><br>{{lien}}<br><br>Cordialement,<br>Équipe Sécurité</textarea></div>
+                    <div class="form-group"><label>Liste d'emails</label><textarea id="emailListInput" rows="3" placeholder="exemple1@email.com&#10;exemple2@email.com"></textarea></div>
+                    <div class="upload-area" id="csvUploadArea"><i class="fas fa-cloud-upload-alt"></i><p>Cliquez ou glissez un CSV</p><input type="file" id="csvFile" accept=".csv" style="display:none;"></div>
+                    <div class="email-list-container" id="emailListPreview"></div>
+                    <div style="display:flex; gap:16px;">
+                        <button class="btn-primary" onclick="sendEmails()"><i class="fas fa-rocket"></i> Envoyer</button>
+                        <button class="btn-secondary" onclick="simulateSend()"><i class="fas fa-eye"></i> Simuler</button>
+                    </div>
+                    <div class="progress-section" id="progressSection"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><div class="progress-stats"><span id="progressText">0/0</span><span id="progressSuccess">✅ 0</span><span id="progressFail">❌ 0</span></div></div>
+                </div>
+            </div>
+            
+            <div class="tab-pane" id="tab-generator">
+                <div class="panel">
+                    <div class="form-row">
+                        <div class="form-group"><label>Template</label><select id="linkTemplateSelect"><option value="">-- Sélectionner --</option></select></div>
+                        <div class="form-group"><label>Nom cible</label><input type="text" id="linkTargetName"></div>
+                    </div>
+                    <div class="form-group"><label>Raccourcisseur</label><select id="shortenerService"><option value="none">Aucun</option><option value="tinyurl">TinyURL</option><option value="isgd">is.gd</option></select></div>
+                    <button class="btn-primary" onclick="generateLink()"><i class="fas fa-magic"></i> Générer</button>
+                    <div class="url-preview" id="urlPreview">
+                        <div class="url-box"><span>Original:</span><code id="originalUrl"></code><button class="btn-copy" onclick="copyText('originalUrl')">📋</button></div>
+                        <div class="url-box"><span>Raccourci:</span><code id="shortUrl">-</code><button class="btn-copy" onclick="copyText('shortUrl')">📋</button></div>
+                        <div class="qr-container" id="qrContainer"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-pane" id="tab-history">
+                <div class="panel">
+                    <div class="history-list" id="historyList"></div>
+                    <button class="btn-secondary" onclick="loadStats()"><i class="fas fa-sync-alt"></i> Rafraîchir</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
+    
+    <script>
+        let emailList = [], templates = [], publicUrl = window.location.origin;
+        
+        fetch('/api/profile').then(r=>r.json()).then(d=>{
+            if(d.avatar) document.getElementById('sidebarAvatar').style.backgroundImage = `url(${d.avatar})`;
+            document.getElementById('sidebarName').textContent = d.username || 'Admin';
+        });
+        
+        async function getPublicUrl() { try { const r = await fetch('/api/public-url'); const d = await r.json(); publicUrl = d.url; } catch { } }
+        
+        async function loadTemplates() {
+            try {
+                const r = await fetch('/api/templates/list');
+                templates = await r.json();
+                const active = templates.filter(t => t.active);
+                document.getElementById('templateCount').textContent = active.length;
+                
+                const options = active.map(t => `<option value="${t.id}">${t.name} (${t.type})</option>`).join('');
+                const select = document.getElementById('templateSelect');
+                const linkSelect = document.getElementById('linkTemplateSelect');
+                
+                select.innerHTML = '<option value="">-- Sélectionner --</option>' + options;
+                if (linkSelect) linkSelect.innerHTML = '<option value="">-- Sélectionner --</option>' + options;
+                
+                console.log('✅ Templates chargés:', active.length);
+            } catch(e) {
+                console.error('❌ Erreur templates:', e);
+            }
+        }
+        
+        async function loadStats() {
+            try {
+                const r = await fetch('/api/campaign/stats');
+                const d = await r.json();
+                document.getElementById('totalSent').textContent = d.total_sent || 0;
+                document.getElementById('totalSuccess').textContent = d.total_success || 0;
+                document.getElementById('totalFailed').textContent = d.total_failed || 0;
+                document.getElementById('todaySent').textContent = d.today_sent || 0;
+                
+                const historyHtml = (d.history || []).map(h => 
+                    `<div class="history-item"><span>${h.email}</span><span class="${h.success ? 'history-success' : 'history-failed'}">${h.success ? '✅' : '❌'}</span></div>`
+                ).join('');
+                document.getElementById('historyList').innerHTML = historyHtml || '<p style="color:#8a9ab0;">Aucun historique</p>';
+            } catch(e) {
+                console.error('❌ Erreur stats:', e);
+            }
+        }
+        
+        document.getElementById('emailListInput').addEventListener('input', function() {
+            emailList = this.value.split('\n').filter(e => e.trim() && e.includes('@'));
+            document.getElementById('emailListPreview').innerHTML = emailList.slice(0,20).map(e => 
+                `<span class="email-tag">${e} <i class="fas fa-times" onclick="removeEmail('${e}')"></i></span>`
+            ).join('');
+        });
+        
+        function removeEmail(e) {
+            emailList = emailList.filter(x => x !== e);
+            document.getElementById('emailListInput').value = emailList.join('\n');
+            document.getElementById('emailListPreview').innerHTML = emailList.slice(0,20).map(x => 
+                `<span class="email-tag">${x} <i class="fas fa-times" onclick="removeEmail('${x}')"></i></span>`
+            ).join('');
+        }
+        
+        async function sendEmails() {
+            const tpl = document.getElementById('templateSelect').value;
+            if (!tpl) { showToast('❌ Sélectionnez un template'); return; }
+            if (emailList.length === 0) { showToast('❌ Aucun email'); return; }
+            
+            const subject = document.getElementById('emailSubject').value;
+            const msg = document.getElementById('emailMessage').value;
+            const name = document.getElementById('targetName').value || 'Utilisateur';
+            
+            document.getElementById('progressSection').style.display = 'block';
+            let s = 0, f = 0;
+            
+            for (let i = 0; i < emailList.length; i++) {
+                try {
+                    const r = await fetch('/api/campaign/send', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({template_id: tpl, email: emailList[i], subject, message: msg, target_name: name})
+                    });
+                    if (r.ok) s++; else f++;
+                } catch { f++; }
+                
+                document.getElementById('progressFill').style.width = ((i+1)/emailList.length*100) + '%';
+                document.getElementById('progressText').textContent = `${i+1}/${emailList.length}`;
+                document.getElementById('progressSuccess').textContent = `✅ ${s}`;
+                document.getElementById('progressFail').textContent = `❌ ${f}`;
+            }
+            
+            showToast(`✅ ${s} succès, ${f} échecs`);
+            loadStats();
+        }
+        
+        function simulateSend() {
+            const tpl = document.getElementById('templateSelect').value;
+            const subject = document.getElementById('emailSubject').value;
+            const msg = document.getElementById('emailMessage').value;
+            const name = document.getElementById('targetName').value || 'Utilisateur';
+            
+            if (!tpl) { showToast('❌ Sélectionnez un template'); return; }
+            if (emailList.length === 0) { showToast('❌ Aucun email'); return; }
+            
+            alert(`📧 SIMULATION\n━━━━━━━━━━━━━━━━\nTemplate: ${tpl}\nSujet: ${subject}\nMessage: ${msg.replace('{{nom}}', name)}\nDestinataires: ${emailList.length}\n${emailList.slice(0,5).join('\n')}`);
+        }
+        
+        async function generateLink() {
+            const tpl = document.getElementById('linkTemplateSelect').value;
+            const name = document.getElementById('linkTargetName').value || 'Utilisateur';
+            if (!tpl) { showToast('❌ Sélectionnez un template'); return; }
+            
+            await getPublicUrl();
+            const original = `${publicUrl}/t/${tpl}?ref=${btoa(name)}`;
+            document.getElementById('originalUrl').textContent = original;
+            
+            const svc = document.getElementById('shortenerService').value;
+            let short = original;
+            if (svc !== 'none') {
+                try {
+                    const r = await fetch(`/api/shorten?service=${svc}&url=${encodeURIComponent(original)}`);
+                    const d = await r.json();
+                    short = d.short_url || original;
+                } catch { }
+            }
+            document.getElementById('shortUrl').textContent = short;
+            document.getElementById('qrContainer').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(short)}">`;
+            document.getElementById('urlPreview').style.display = 'block';
+            showToast('✅ Lien généré');
+        }
+        
+        function copyText(id) { navigator.clipboard?.writeText(document.getElementById(id).textContent); showToast('✅ Copié'); }
+        
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+        
+        document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+        }));
+        
+        const uploadArea = document.getElementById('csvUploadArea');
+        const csvInput = document.getElementById('csvFile');
+        if (uploadArea) {
+            uploadArea.addEventListener('click', () => csvInput.click());
+            uploadArea.addEventListener('dragover', e => e.preventDefault());
+            uploadArea.addEventListener('drop', e => {
+                e.preventDefault();
+                if (e.dataTransfer.files[0]) processCSV(e.dataTransfer.files[0]);
+            });
+        }
+        if (csvInput) {
+            csvInput.addEventListener('change', e => { if (e.target.files[0]) processCSV(e.target.files[0]); });
+        }
+        
+        function processCSV(file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const lines = e.target.result.split('\n');
+                const emails = [];
+                lines.forEach(line => {
+                    const parts = line.split(',');
+                    if (parts[0] && parts[0].includes('@')) emails.push(parts[0].trim());
+                });
+                emailList = [...new Set([...emailList, ...emails])];
+                document.getElementById('emailListInput').value = emailList.join('\n');
+                document.getElementById('emailListPreview').innerHTML = emailList.slice(0,20).map(x => 
+                    `<span class="email-tag">${x} <i class="fas fa-times" onclick="removeEmail('${x}')"></i></span>`
+                ).join('');
+                showToast(`✅ ${emails.length} emails importés`);
+            };
+            reader.readAsText(file);
+        }
+        
+        document.getElementById('logoutBtn').addEventListener('click', e => {
+            e.preventDefault();
+            if (confirm('Voulez-vous vous déconnecter ?')) window.location.href = '/logout';
+        });
+        
+        // Initialisation
+        getPublicUrl();
+        loadTemplates();
+        loadStats();
+        
+        // Recharger si nécessaire
+        setTimeout(() => { if (templates.length === 0) loadTemplates(); }, 500);
+    </script>
+</body>
+</html>

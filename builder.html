@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TONY-HACK | Code Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CodeMirror pour coloration syntaxique -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Inter", sans-serif;
+            background: #0a0e14;
+            color: #e0e0e0;
+        }
+        .app { display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #1a1f2a;
+            border-right: 1px solid #2a3342;
+            padding: 24px 20px;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            overflow-y: auto;
+        }
+        .logo h2 { font-size: 24px; font-weight: 700; color: #e94560; }
+        .logo p { color: #6b7a8f; font-size: 11px; margin-top: 4px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; color: #8a9ab0;
+            text-decoration: none; border-radius: 10px;
+            margin-bottom: 4px; transition: all 0.2s;
+        }
+        .nav-item i { width: 24px; }
+        .nav-item:hover { background: #2a3342; color: white; }
+        .nav-item.active { background: #e94560; color: white; }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 20px 30px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        h1 { font-size: 24px; color: white; }
+        h1 i { color: #e94560; margin-right: 10px; }
+        .actions { display: flex; gap: 10px; }
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 10px;
+            font-weight: 600; font-size: 13px; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: #e94560; color: white; }
+        .btn-primary:hover { background: #d63850; }
+        .btn-secondary { background: #2a3342; color: #8a9ab0; }
+        .btn-secondary:hover { background: #3a4555; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        
+        /* Editor + Preview Layout */
+        .editor-container {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        /* Panneau Éditeur */
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1a1f2a;
+            border: 1px solid #2a3342;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .editor-tabs {
+            display: flex;
+            border-bottom: 1px solid #2a3342;
+            background: #0f1419;
+        }
+        .editor-tab {
+            padding: 12px 24px;
+            color: #8a9ab0;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .editor-tab i { margin-right: 8px; }
+        .editor-tab.active {
+            color: #e94560;
+            border-bottom-color: #e94560;
+        }
+        .editor-content {
+            flex: 1;
+            display: flex;
+        }
+        .editor-area {
+            flex: 1;
+            display: none;
+        }
+        .editor-area.active {
+            display: block;
+        }
+        .CodeMirror {
+            height: 100%;
+            font-size: 14px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+        
+        /* Panneau Prévisualisation */
+        .preview-panel {
+            flex: 1;
+            background: #1a1f2a;
+            border: 1px solid #2a3342;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .preview-header {
+            padding: 12px 20px;
+            background: #0f1419;
+            border-bottom: 1px solid #2a3342;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .preview-header i { color: #e94560; }
+        .preview-header span { color: white; font-weight: 500; }
+        .preview-frame {
+            flex: 1;
+            background: white;
+            border: none;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px;
+            background: #1a1f2a; border: 1px solid #e94560;
+            border-radius: 12px; padding: 16px 20px; color: white;
+            display: none; align-items: center; gap: 12px; z-index: 9999;
+        }
+        .toast.show { display: flex; }
+        .toast i { color: #10b981; font-size: 20px; }
+        
+        /* Templates rapides */
+        .quick-templates {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #2a3342;
+        }
+        .quick-templates h4 {
+            color: #8a9ab0; font-size: 12px; text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .template-btn {
+            width: 100%; padding: 10px; margin-bottom: 8px;
+            background: #0f1419; border: 1px solid #2a3342;
+            border-radius: 8px; color: #e0e0e0;
+            font-size: 13px; cursor: pointer; text-align: left;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .template-btn:hover { background: #2a3342; border-color: #e94560; }
+        .template-btn i { color: #e94560; width: 20px; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>🔴 TONY-HACK</h2>
+                <p>ULTRA PRO v4.0</p>
+            </div>
+            <nav style="margin-top: 30px;">
+                <a href="/" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="/campaigns" class="nav-item"><i class="fas fa-bullseye"></i> Campagne Optimiser</a>
+                <a href="/templates" class="nav-item"><i class="fas fa-file-code"></i> Templates</a>
+                <a href="/builder" class="nav-item active"><i class="fas fa-code"></i> Code Editor</a>
+                <a href="/statistics" class="nav-item"><i class="fas fa-chart-bar"></i> Statistiques</a>
+                <a href="/logs" class="nav-item"><i class="fas fa-history"></i> Logs</a>
+                <div class="nav-divider"></div>
+                <a href="/settings" class="nav-item"><i class="fas fa-cog"></i> Paramètres</a>
+                <a href="/profile" class="nav-item"><i class="fas fa-user"></i> Profil</a>
+                <a href="#" class="nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+            </nav>
+            
+            <!-- Templates rapides -->
+            <div class="quick-templates">
+                <h4><i class="fas fa-bolt"></i> Templates rapides</h4>
+                <button class="template-btn" onclick="loadTemplate('facebook')">
+                    <i class="fab fa-facebook"></i> Facebook Login
+                </button>
+                <button class="template-btn" onclick="loadTemplate('google')">
+                    <i class="fab fa-google"></i> Google Login
+                </button>
+                <button class="template-btn" onclick="loadTemplate('instagram')">
+                    <i class="fab fa-instagram"></i> Instagram Login
+                </button>
+                <button class="template-btn" onclick="loadTemplate('blank')">
+                    <i class="fas fa-file"></i> Page blanche
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header">
+                <h1><i class="fas fa-code"></i> Code Editor HTML/CSS/JS</h1>
+                <div class="actions">
+                    <button class="btn btn-secondary" onclick="refreshPreview()">
+                        <i class="fas fa-sync-alt"></i> Actualiser
+                    </button>
+                    <button class="btn btn-primary" onclick="saveTemplate()">
+                        <i class="fas fa-save"></i> Enregistrer
+                    </button>
+                    <button class="btn btn-success" onclick="exportHtml()">
+                        <i class="fas fa-download"></i> Exporter
+                    </button>
+                </div>
+            </div>
+            
+            <div class="editor-container">
+                <!-- Panneau Éditeur -->
+                <div class="editor-panel">
+                    <div class="editor-tabs">
+                        <div class="editor-tab active" data-tab="html">
+                            <i class="fab fa-html5" style="color:#e44d26;"></i> HTML
+                        </div>
+                        <div class="editor-tab" data-tab="css">
+                            <i class="fab fa-css3-alt" style="color:#264de4;"></i> CSS
+                        </div>
+                        <div class="editor-tab" data-tab="js">
+                            <i class="fab fa-js" style="color:#f7df1e;"></i> JavaScript
+                        </div>
+                    </div>
+                    <div class="editor-content">
+                        <div class="editor-area active" id="html-area">
+                            <textarea id="html-editor"></textarea>
+                        </div>
+                        <div class="editor-area" id="css-area">
+                            <textarea id="css-editor"></textarea>
+                        </div>
+                        <div class="editor-area" id="js-area">
+                            <textarea id="js-editor"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Panneau Prévisualisation -->
+                <div class="preview-panel">
+                    <div class="preview-header">
+                        <i class="fas fa-eye"></i>
+                        <span>Prévisualisation en direct</span>
+                    </div>
+                    <iframe id="previewFrame" class="preview-frame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"></iframe>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMsg"></span>
+    </div>
+    
+    <script>
+        // =====================================================
+        // CODE EDITOR - TONY-HACK v4.0
+        // =====================================================
+        
+        let htmlEditor, cssEditor, jsEditor;
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Éditeur HTML
+            htmlEditor = CodeMirror.fromTextArea(document.getElementById('html-editor'), {
+                mode: 'htmlmixed',
+                theme: 'monokai',
+                lineNumbers: true,
+                autoCloseTags: true,
+                autoCloseBrackets: true,
+                matchBrackets: true,
+                indentUnit: 4,
+                tabSize: 4
+            });
+            
+            // Éditeur CSS
+            cssEditor = CodeMirror.fromTextArea(document.getElementById('css-editor'), {
+                mode: 'css',
+                theme: 'monokai',
+                lineNumbers: true,
+                autoCloseBrackets: true,
+                matchBrackets: true
+            });
+            
+            // Éditeur JS
+            jsEditor = CodeMirror.fromTextArea(document.getElementById('js-editor'), {
+                mode: 'javascript',
+                theme: 'monokai',
+                lineNumbers: true,
+                autoCloseBrackets: true,
+                matchBrackets: true
+            });
+            
+            // Charger template par défaut
+            loadTemplate('facebook');
+            
+            // Écouter les changements pour prévisualisation auto
+            let timeout;
+            [htmlEditor, cssEditor, jsEditor].forEach(ed => {
+                ed.on('change', () => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(refreshPreview, 500);
+                });
+            });
+            
+            // Tabs
+            document.querySelectorAll('.editor-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.editor-area').forEach(a => a.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tabName + '-area').classList.add('active');
+                    if (tabName === 'html') htmlEditor.refresh();
+                    else if (tabName === 'css') cssEditor.refresh();
+                    else if (tabName === 'js') jsEditor.refresh();
+                });
+            });
+        });
+        
+        // Rafraîchir la prévisualisation
+        function refreshPreview() {
+            const html = htmlEditor.getValue();
+            const css = cssEditor.getValue();
+            const js = jsEditor.getValue();
+            
+            const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>${css}</style>
+</head>
+<body>
+    ${html}
+    <script>${js}<\/script>
+</body>
+</html>`;
+            
+            const frame = document.getElementById('previewFrame');
+            frame.srcdoc = fullHtml;
+        }
+        
+        // Charger un template prédéfini
+        function loadTemplate(type) {
+            if (type === 'facebook') {
+                htmlEditor.setValue(`<div style="text-align:center; max-width:400px; margin:50px auto; padding:20px; font-family:Arial;">
+    <h2 style="color:#1877f2; font-size:32px; margin-bottom:20px;">facebook</h2>
+    <input type="text" placeholder="Email ou téléphone" style="width:100%; padding:14px; margin:8px 0; border:1px solid #ddd; border-radius:6px; font-size:16px;">
+    <input type="password" placeholder="Mot de passe" style="width:100%; padding:14px; margin:8px 0; border:1px solid #ddd; border-radius:6px; font-size:16px;">
+    <button style="width:100%; padding:14px; background:#1877f2; color:white; border:none; border-radius:6px; font-size:18px; font-weight:bold; cursor:pointer;">Se connecter</button>
+    <p style="color:#1877f2; margin-top:16px; cursor:pointer;">Mot de passe oublié ?</p>
+</div>`);
+                cssEditor.setValue(`body { background: #f0f2f5; }`);
+                jsEditor.setValue(`document.querySelector('button').addEventListener('click', function() {
+    alert('Login simulation');
+});`);
+            } else if (type === 'google') {
+                htmlEditor.setValue(`<div style="text-align:center; max-width:400px; margin:50px auto; padding:30px; font-family:'Google Sans',Arial;">
+    <h1 style="font-size:24px; margin-bottom:10px;">Connexion</h1>
+    <p style="color:#5f6368; margin-bottom:30px;">Accéder à Gmail</p>
+    <input type="email" placeholder="Adresse e-mail" style="width:100%; padding:14px; margin:8px 0; border:1px solid #dadce0; border-radius:4px; font-size:16px;">
+    <button style="width:100%; padding:14px; background:#1a73e8; color:white; border:none; border-radius:4px; font-size:16px; font-weight:500; cursor:pointer;">Suivant</button>
+</div>`);
+                cssEditor.setValue(`body { background: #fff; }`);
+                jsEditor.setValue('');
+            } else if (type === 'instagram') {
+                htmlEditor.setValue(`<div style="text-align:center; max-width:350px; margin:50px auto; padding:20px; background:#fff; border:1px solid #dbdbdb; font-family:Arial;">
+    <h2 style="font-family:'Billabong'; font-size:40px; margin-bottom:30px;">Instagram</h2>
+    <input type="text" placeholder="Nom d'utilisateur" style="width:100%; padding:10px; margin:5px 0; background:#fafafa; border:1px solid #dbdbdb; border-radius:3px;">
+    <input type="password" placeholder="Mot de passe" style="width:100%; padding:10px; margin:5px 0; background:#fafafa; border:1px solid #dbdbdb; border-radius:3px;">
+    <button style="width:100%; padding:8px; background:#0095f6; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Se connecter</button>
+</div>`);
+                cssEditor.setValue(`body { background: #fafafa; }`);
+                jsEditor.setValue('');
+            } else {
+                htmlEditor.setValue(`<h1>Mon Template</h1>`);
+                cssEditor.setValue(`body { font-family: Arial; }`);
+                jsEditor.setValue(`console.log('Template chargé');`);
+            }
+            refreshPreview();
+        }
+        
+        // Enregistrer le template
+        function saveTemplate() {
+            const html = htmlEditor.getValue();
+            const css = cssEditor.getValue();
+            const js = jsEditor.getValue();
+            
+            const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>${css}</style>
+</head>
+<body>
+    ${html}
+    <script>${js}<\/script>
+</body>
+</html>`;
+            
+            const name = prompt('Nom du template:');
+            if (!name) return;
+            
+            fetch('/api/builder/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, html: fullHtml})
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    showToast('✅ Template enregistré !');
+                } else {
+                    showToast('❌ Erreur', 'error');
+                }
+            })
+            .catch(() => showToast('❌ Erreur connexion', 'error'));
+        }
+        
+        // Exporter HTML
+        function exportHtml() {
+            const html = htmlEditor.getValue();
+            const css = cssEditor.getValue();
+            const js = jsEditor.getValue();
+            
+            const fullHtml = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><style>${css}</style></head>
+<body>${html}<script>${js}<\/script></body>
+</html>`;
+            
+            navigator.clipboard?.writeText(fullHtml).then(() => {
+                showToast('✅ HTML copié !');
+            }).catch(() => {
+                prompt('Copiez manuellement:', fullHtml);
+            });
+        }
+        
+        // Toast
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('i');
+            const span = document.getElementById('toastMsg');
+            span.textContent = msg;
+            icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // Exposer
+        window.refreshPreview = refreshPreview;
+        window.loadTemplate = loadTemplate;
+        window.saveTemplate = saveTemplate;
+        window.exportHtml = exportHtml;
+    </script>
+</body>
+</html>
+
+<script>
+// Charger avatar pour Code Editor
+fetch('/api/profile')
+    .then(r => r.json())
+    .then(d => {
+        if (d.avatar) {
+            const avatarEl = document.querySelector('.avatar, #sidebarAvatar');
+            if (avatarEl) {
+                avatarEl.style.backgroundImage = `url(${d.avatar})`;
+                avatarEl.textContent = '';
+            }
+        }
+        const nameEl = document.querySelector('.user-info h4, #sidebarName');
+        if (nameEl) nameEl.textContent = d.username || 'Admin';
+    });
+</script>

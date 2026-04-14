@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TONY-HACK v4.0 | Paramètres PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Inter", sans-serif; background: #0f1419; color: #e0e0e0; display: flex; min-height: 100vh; }
+        .sidebar { width: 280px; background: #1a1f2a; border-right: 1px solid #2a3342; padding: 24px 20px; position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; }
+        .logo h2 { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #e94560, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo p { color: #6b7a8f; font-size: 11px; margin-top: 4px; }
+        .version-tag { display: inline-block; background: #e94560; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-top: 6px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: #8a9ab0; text-decoration: none; border-radius: 10px; margin-bottom: 4px; transition: all 0.2s; }
+        .nav-item i { width: 24px; }
+        .nav-item:hover { background: #2a3342; color: white; }
+        .nav-item.active { background: #e94560; color: white; }
+        .nav-divider { margin: 16px 0; border-top: 1px solid #2a3342; }
+        .main-content { flex: 1; margin-left: 280px; padding: 32px 40px; }
+        h1 { font-size: 28px; margin-bottom: 32px; color: white; }
+        h1 i { color: #e94560; margin-right: 10px; }
+        .settings-grid { display: grid; gap: 24px; max-width: 1000px; }
+        .settings-card { background: #1a1f2a; border: 1px solid #2a3342; border-radius: 20px; padding: 28px; }
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #2a3342; }
+        .card-header i { font-size: 24px; color: #e94560; width: 40px; height: 40px; background: rgba(233,69,96,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .card-header h2 { font-size: 20px; font-weight: 600; color: white; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; color: #8a9ab0; font-size: 13px; font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 14px 16px; background: #0f1419; border: 1px solid #2a3342; border-radius: 12px; color: white; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #e94560; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .toggle-group { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #2a3342; }
+        .toggle-group:last-child { border-bottom: none; }
+        .toggle-label { display: flex; align-items: center; gap: 12px; }
+        .toggle-label i { color: #e94560; width: 24px; }
+        .toggle-label .title { color: white; font-weight: 500; }
+        .toggle-label .desc { color: #6b7a8f; font-size: 12px; margin-top: 2px; }
+        .toggle-switch { position: relative; width: 52px; height: 28px; background: #2a3342; border-radius: 14px; cursor: pointer; transition: background 0.2s; }
+        .toggle-switch.active { background: #e94560; }
+        .toggle-switch::after { content: ""; position: absolute; width: 24px; height: 24px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: left 0.2s; }
+        .toggle-switch.active::after { left: 26px; }
+        .btn-save { background: linear-gradient(135deg, #e94560, #ff6b6b); color: white; border: none; padding: 16px 32px; border-radius: 14px; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-top: 24px; transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(233,69,96,0.4); }
+        .btn-test { background: #2a3342; color: #8a9ab0; border: none; padding: 10px 20px; border-radius: 10px; font-size: 13px; cursor: pointer; margin-top: 8px; }
+        .btn-test:hover { background: #3a4555; color: white; }
+        .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1f2a; border: 1px solid #e94560; border-radius: 12px; padding: 16px 20px; color: white; z-index: 9999; display: none; align-items: center; gap: 12px; }
+        .toast.show { display: flex; animation: slideIn 0.3s ease; }
+        .toast i { color: #10b981; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
+        .slider-container { display: flex; align-items: center; gap: 16px; }
+        .slider-container input[type="range"] { flex: 1; height: 6px; -webkit-appearance: none; background: #2a3342; border-radius: 3px; }
+        .slider-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #e94560; border-radius: 50%; cursor: pointer; }
+        .slider-value { min-width: 50px; text-align: right; color: white; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">
+            <h2>🔴 TONY-HACK</h2>
+            <p>PHISHING SIMULATOR</p>
+            <span class="version-tag">v4.0 PRO</span>
+        </div>
+        <nav style="margin-top: 30px;">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/campaigns" class="nav-item"><i class="fas fa-bullseye"></i> Campagne Optimiser</a>
+                <a href="/builder" class="nav-item"><i class="fas fa-code"></i> Code Editor</a>
+            <a href="/templates" class="nav-item"><i class="fas fa-file-code"></i> Templates</a>
+                <a href="/statistics" class="nav-item"><i class="fas fa-chart-bar"></i> Statistiques</a>
+            <a href="/logs" class="nav-item"><i class="fas fa-history"></i> Logs</a>
+            <div class="nav-divider"></div>
+            <a href="/settings" class="nav-item active"><i class="fas fa-cog"></i> Paramètres</a>
+            <a href="/profile" class="nav-item"><i class="fas fa-user"></i> Profil</a>
+            <a href="#" class="nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+        </nav>
+    </aside>
+    
+    <main class="main-content">
+        <h1><i class="fas fa-cog"></i> Paramètres PRO</h1>
+        
+        <div class="settings-grid">
+            <!-- SMTP -->
+            <div class="settings-card">
+                <div class="card-header"><i class="fas fa-envelope"></i><h2>Configuration SMTP</h2></div>
+                <div class="form-group"><label>Serveur SMTP</label><input type="text" id="smtp_host" value="smtp.gmail.com"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Port</label><input type="text" id="smtp_port" value="587"></div>
+                    <div class="form-group"><label>Sécurité</label><select id="smtp_security"><option value="tls" selected>TLS</option><option value="ssl">SSL</option></select></div>
+                </div>
+                <div class="form-group"><label>Email expéditeur</label><input type="email" id="smtp_user" placeholder="votre@email.com"></div>
+                <div class="form-group"><label>Mot de passe</label><input type="password" id="smtp_pass" placeholder="••••••••"></div>
+                <button class="btn-test" id="testSmtp"><i class="fas fa-paper-plane"></i> Tester SMTP</button>
+            </div>
+            
+            <!-- Sécurité -->
+            <div class="settings-card">
+                <div class="card-header"><i class="fas fa-shield-alt"></i><h2>Sécurité</h2></div>
+                <div class="toggle-group"><div class="toggle-label"><i class="fas fa-lock"></i><div><div class="title">2FA</div><div class="desc">Double authentification</div></div></div><div class="toggle-switch" id="twofaToggle"></div></div>
+                <div class="toggle-group"><div class="toggle-label"><i class="fas fa-ban"></i><div><div class="title">Blocage après échecs</div><div class="desc">5 tentatives max</div></div></div><div class="toggle-switch active" id="bruteforceToggle"></div></div>
+                <div class="toggle-group"><div class="toggle-label"><i class="fas fa-clock"></i><div><div class="title">Session timeout</div><div class="desc">Expiration auto</div></div></div><div class="toggle-switch active" id="sessionToggle"></div></div>
+                <div class="form-group"><label>Code d'accès dashboard</label><input type="text" id="accessCode" value="TONY2026"></div>
+                <div class="form-group"><label>Tentatives max</label><div class="slider-container"><input type="range" id="maxAttempts" min="1" max="10" value="5"><span class="slider-value" id="maxAttemptsVal">5</span></div></div>
+            </div>
+            
+            <!-- Notifications -->
+            <div class="settings-card">
+                <div class="card-header"><i class="fas fa-bell"></i><h2>Notifications</h2></div>
+                <div class="toggle-group"><div class="toggle-label"><i class="fas fa-key"></i><div><div class="title">Nouveau credential</div><div class="desc">Alerte capture</div></div></div><div class="toggle-switch active" id="notifyCredToggle"></div></div>
+                <div class="toggle-group"><div class="toggle-label"><i class="fas fa-mouse-pointer"></i><div><div class="title">Clic sur lien</div><div class="desc">Notification clic</div></div></div><div class="toggle-switch active" id="notifyClickToggle"></div></div>
+                <div class="toggle-group"><div class="toggle-label"><i class="fas fa-check-circle"></i><div><div class="title">Campagne terminée</div><div class="desc">Fin de campagne</div></div></div><div class="toggle-switch" id="notifyCompleteToggle"></div></div>
+                <div class="toggle-group"><div class="toggle-label"><i class="fas fa-volume-up"></i><div><div class="title">Son notification</div><div class="desc">Jouer un son</div></div></div><div class="toggle-switch" id="soundToggle"></div></div>
+            </div>
+            
+            <!-- Apparence -->
+            <div class="settings-card">
+                <div class="card-header"><i class="fas fa-palette"></i><h2>Apparence</h2></div>
+                <div class="toggle-group"><div class="toggle-label"><i class="fas fa-moon"></i><div><div class="title">Dark Mode</div><div class="desc">Thème sombre</div></div></div><div class="toggle-switch active" id="darkModeToggle"></div></div>
+                <div class="toggle-group"><div class="toggle-label"><i class="fas fa-film"></i><div><div class="title">Animations</div><div class="desc">Effets visuels</div></div></div><div class="toggle-switch active" id="animToggle"></div></div>
+                <div class="form-group"><label>Nom application</label><input type="text" id="appName" value="TONY-HACK"></div>
+            </div>
+            
+            <!-- Maintenance -->
+            <div class="settings-card">
+                <div class="card-header"><i class="fas fa-tools"></i><h2>Maintenance</h2></div>
+                <div class="toggle-group"><div class="toggle-label"><i class="fas fa-power-off"></i><div><div class="title">Mode maintenance</div><div class="desc">Désactiver accès</div></div></div><div class="toggle-switch" id="maintenanceToggle"></div></div>
+                <div class="form-group"><label>Message maintenance</label><textarea id="maintenanceMsg" rows="2">Maintenance en cours...</textarea></div>
+            </div>
+        </div>
+        
+        <button class="btn-save" id="saveSettings"><i class="fas fa-save"></i> Enregistrer tous les paramètres</button>
+    </main>
+    
+    <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
+    
+    <script>
+        document.querySelectorAll('.toggle-switch').forEach(t => t.addEventListener('click', () => t.classList.toggle('active')));
+        const slider = document.getElementById('maxAttempts');
+        document.getElementById('maxAttemptsVal').textContent = slider.value;
+        slider.addEventListener('input', function(){ document.getElementById('maxAttemptsVal').textContent = this.value; });
+        
+        document.getElementById('testSmtp').addEventListener('click', ()=> showToast('✅ SMTP fonctionnel (simulation)'));
+        
+        document.getElementById('saveSettings').addEventListener('click', async ()=>{
+            const settings = {
+                smtp_host: document.getElementById('smtp_host').value,
+                smtp_port: document.getElementById('smtp_port').value,
+                smtp_security: document.getElementById('smtp_security').value,
+                smtp_user: document.getElementById('smtp_user').value,
+                access_code: document.getElementById('accessCode').value,
+                app_name: document.getElementById('appName').value,
+                max_attempts: slider.value,
+                dark_mode: document.getElementById('darkModeToggle').classList.contains('active'),
+                two_factor: document.getElementById('twofaToggle').classList.contains('active'),
+                maintenance: document.getElementById('maintenanceToggle').classList.contains('active'),
+                maintenance_msg: document.getElementById('maintenanceMsg').value
+            };
+            await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(settings)});
+            showToast('✅ Paramètres enregistrés !');
+        });
+        
+        function showToast(m){ document.getElementById('toastMsg').textContent = m; document.getElementById('toast').classList.add('show'); setTimeout(()=>document.getElementById('toast').classList.remove('show'),3000); }
+    </script>
+</body>
+</html>
+
+
+<!-- ===================================================== -->
+<!-- WEBHOOKS SECTION - VERSION PRO -->
+<!-- ===================================================== -->
+
+<div class="settings-card">
+    <div class="card-header"><i class="fas fa-webhook"></i><h2>Webhooks (Notifications)</h2></div>
+    
+    <!-- Discord -->
+    <div style="margin-bottom: 24px; padding: 16px; background: #0f1419; border-radius: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h4 style="color: white; display: flex; align-items: center; gap: 10px;">
+                <i class="fab fa-discord" style="color: #5865F2; font-size: 24px;"></i> 
+                Discord
+                <span style="font-size: 12px; color: #6b7a8f; margin-left: 10px;" id="discordStatus"></span>
+            </h4>
+            <button class="btn-secondary" onclick="toggleDiscordForm()" id="discordConfigBtn">
+                <i class="fas fa-plus"></i> Configurer Discord
+            </button>
+        </div>
+        
+        <div id="discordForm" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #2a3342;">
+            <div class="form-group">
+                <label>Webhook URL</label>
+                <input type="text" id="discordWebhookUrl" placeholder="https://discord.com/api/webhooks/...">
+            </div>
+            <div class="form-group">
+                <label>Nom</label>
+                <input type="text" id="discordWebhookName" placeholder="TONY-HACK" value="TONY-HACK">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" onclick="addDiscordWebhook()" style="flex: 1;">Enregistrer</button>
+                <button class="btn-secondary" onclick="testDiscordWebhook()">Tester</button>
+                <button class="btn-secondary" onclick="toggleDiscordForm()">Annuler</button>
+            </div>
+        </div>
+        <div id="discordWebhooksList" style="margin-top: 16px;"></div>
+    </div>
+    
+    <!-- Telegram -->
+    <div style="margin-bottom: 24px; padding: 16px; background: #0f1419; border-radius: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h4 style="color: white; display: flex; align-items: center; gap: 10px;">
+                <i class="fab fa-telegram" style="color: #26A5E4; font-size: 24px;"></i> 
+                Telegram
+                <span style="font-size: 12px; color: #6b7a8f; margin-left: 10px;" id="telegramStatus"></span>
+            </h4>
+            <button class="btn-secondary" onclick="toggleTelegramForm()" id="telegramConfigBtn">
+                <i class="fas fa-plus"></i> Configurer Telegram
+            </button>
+        </div>
+        
+        <div id="telegramForm" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #2a3342;">
+            <div class="form-group">
+                <label>Bot Token</label>
+                <input type="text" id="telegramToken" placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
+            </div>
+            <div class="form-group">
+                <label>Chat ID</label>
+                <input type="text" id="telegramChatId" placeholder="123456789">
+            </div>
+            <div class="form-group">
+                <label>Nom</label>
+                <input type="text" id="telegramName" placeholder="TONY-HACK" value="TONY-HACK">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" onclick="addTelegramWebhook()" style="flex: 1;">Enregistrer</button>
+                <button class="btn-secondary" onclick="testTelegramWebhook()">Tester</button>
+                <button class="btn-secondary" onclick="toggleTelegramForm()">Annuler</button>
+            </div>
+        </div>
+        <div id="telegramWebhooksList" style="margin-top: 16px;"></div>
+    </div>
+</div>
+
+<!-- Fin Webhooks Section -->
+
+<script>
+// =====================================================
+// WEBHOOKS SCRIPTS
+// =====================================================
+
+let discordFormVisible = false;
+let telegramFormVisible = false;
+
+function toggleDiscordForm() {
+    discordFormVisible = !discordFormVisible;
+    document.getElementById('discordForm').style.display = discordFormVisible ? 'block' : 'none';
+    document.getElementById('discordConfigBtn').innerHTML = discordFormVisible ? '<i class="fas fa-times"></i> Fermer' : '<i class="fas fa-plus"></i> Configurer Discord';
+}
+
+function toggleTelegramForm() {
+    telegramFormVisible = !telegramFormVisible;
+    document.getElementById('telegramForm').style.display = telegramFormVisible ? 'block' : 'none';
+    document.getElementById('telegramConfigBtn').innerHTML = telegramFormVisible ? '<i class="fas fa-times"></i> Fermer' : '<i class="fas fa-plus"></i> Configurer Telegram';
+}
+
+async function loadWebhooks() {
+    try {
+        const r = await fetch('/api/webhooks');
+        const data = await r.json();
+        
+        // Discord
+        const discordList = document.getElementById('discordWebhooksList');
+        if (data.discord && data.discord.length > 0) {
+            document.getElementById('discordStatus').textContent = '(' + data.discord.length + ' configuré)';
+            discordList.innerHTML = data.discord.map((w, i) => 
+                '<div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #1a1f2a; border-radius: 10px; margin-bottom: 8px;">' +
+                '<span style="color: white;">' + w.name + '</span>' +
+                '<div>' +
+                '<button onclick="toggleWebhook(\'discord\', ' + i + ')" style="background: none; border: none; color: ' + (w.active ? '#10b981' : '#ef4444') + '; cursor: pointer;">⚡</button>' +
+                '<button onclick="deleteWebhook(\'discord\', ' + i + ')" style="background: none; border: none; color: #ef4444; margin-left: 10px; cursor: pointer;">🗑️</button>' +
+                '</div></div>'
+            ).join('');
+        } else {
+            document.getElementById('discordStatus').textContent = '(non configuré)';
+            discordList.innerHTML = '<p style="color: #6b7a8f;">Aucun webhook Discord</p>';
+        }
+        
+        // Telegram
+        const telegramList = document.getElementById('telegramWebhooksList');
+        if (data.telegram && data.telegram.length > 0) {
+            document.getElementById('telegramStatus').textContent = '(' + data.telegram.length + ' configuré)';
+            telegramList.innerHTML = data.telegram.map((w, i) => 
+                '<div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #1a1f2a; border-radius: 10px; margin-bottom: 8px;">' +
+                '<span style="color: white;">' + w.name + '</span>' +
+                '<div>' +
+                '<button onclick="toggleWebhook(\'telegram\', ' + i + ')" style="background: none; border: none; color: ' + (w.active ? '#10b981' : '#ef4444') + '; cursor: pointer;">⚡</button>' +
+                '<button onclick="deleteWebhook(\'telegram\', ' + i + ')" style="background: none; border: none; color: #ef4444; margin-left: 10px; cursor: pointer;">🗑️</button>' +
+                '</div></div>'
+            ).join('');
+        } else {
+            document.getElementById('telegramStatus').textContent = '(non configuré)';
+            telegramList.innerHTML = '<p style="color: #6b7a8f;">Aucun webhook Telegram</p>';
+        }
+    } catch(e) {
+        console.error('Erreur webhooks:', e);
+    }
+}
+
+async function addDiscordWebhook() {
+    const url = document.getElementById('discordWebhookUrl').value;
+    const name = document.getElementById('discordWebhookName').value;
+    if (!url) { alert('URL requise'); return; }
+    
+    await fetch('/api/webhooks/discord', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({url, name})
+    });
+    document.getElementById('discordWebhookUrl').value = '';
+    toggleDiscordForm();
+    loadWebhooks();
+    alert('✅ Webhook Discord ajouté !');
+}
+
+async function addTelegramWebhook() {
+    const token = document.getElementById('telegramToken').value;
+    const chat_id = document.getElementById('telegramChatId').value;
+    const name = document.getElementById('telegramName').value;
+    if (!token || !chat_id) { alert('Token et Chat ID requis'); return; }
+    
+    await fetch('/api/webhooks/telegram', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({token, chat_id, name})
+    });
+    document.getElementById('telegramToken').value = '';
+    document.getElementById('telegramChatId').value = '';
+    toggleTelegramForm();
+    loadWebhooks();
+    alert('✅ Webhook Telegram ajouté !');
+}
+
+async function toggleWebhook(service, index) {
+    await fetch('/api/webhooks/' + service + '/' + index + '/toggle', {method: 'POST'});
+    loadWebhooks();
+}
+
+async function deleteWebhook(service, index) {
+    if (!confirm('Supprimer ce webhook ?')) return;
+    await fetch('/api/webhooks/' + service + '/' + index, {method: 'DELETE'});
+    loadWebhooks();
+}
+
+async function testDiscordWebhook() {
+    const url = document.getElementById('discordWebhookUrl').value;
+    if (!url) { alert('URL requise'); return; }
+    
+    const r = await fetch('/api/webhooks/test', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({service: 'discord', url})
+    });
+    const d = await r.json();
+    alert(d.success ? '✅ Test Discord réussi !' : '❌ Échec du test');
+}
+
+async function testTelegramWebhook() {
+    const token = document.getElementById('telegramToken').value;
+    const chat_id = document.getElementById('telegramChatId').value;
+    if (!token || !chat_id) { alert('Token et Chat ID requis'); return; }
+    
+    const r = await fetch('/api/webhooks/test', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({service: 'telegram', token, chat_id})
+    });
+    const d = await r.json();
+    alert(d.success ? '✅ Test Telegram réussi !' : '❌ Échec du test');
+}
+
+// Charger automatiquement
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadWebhooks);
+} else {
+    loadWebhooks();
+}
+</script>
+<!-- Fin Webhooks Script -->
+
+<!-- Modal Déconnexion -->
+<div class="modal-overlay" id="logoutModal" style="display:none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Déconnexion</h2>
+            <button class="modal-close" onclick="closeLogoutModal()">&times;</button>
+        </div>
+        <div class="modal-body"><p>Voulez-vous vraiment vous déconnecter ?</p></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeLogoutModal()">Annuler</button>
+            <button class="btn-confirm" onclick="confirmLogout()">Déconnexion</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function closeLogoutModal() { document.getElementById('logoutModal').style.display = 'none'; }
+function confirmLogout() { window.location.href = '/logout'; }
+document.getElementById('logoutBtn').addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('logoutModal').style.display = 'flex';
+});
+document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
+});
+</script>
+
+<style>
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 10000;
+}
+.modal {
+    background: #1a1f2a; border: 2px solid #e94560; border-radius: 20px;
+    padding: 30px; width: 90%; max-width: 400px;
+}
+.modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+}
+.modal-header h2 { color: white; font-size: 20px; }
+.modal-close {
+    width: 32px; height: 32px; background: #2a3342;
+    border: none; border-radius: 8px; color: #8a9ab0;
+    cursor: pointer; font-size: 18px;
+}
+.modal-body { color: #8a9ab0; margin-bottom: 24px; }
+.modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
+.btn-cancel {
+    background: #2a3342; color: #8a9ab0;
+    border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;
+}
+.btn-confirm {
+    background: #ef4444; color: white;
+    border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;
+}
+</style>

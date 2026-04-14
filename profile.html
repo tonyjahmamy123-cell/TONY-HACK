@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TONY-HACK | Profil PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Inter", sans-serif; background: #0f1419; color: #e0e0e0; display: flex; min-height: 100vh; }
+        .sidebar { width: 280px; background: #1a1f2a; border-right: 1px solid #2a3342; padding: 24px 20px; }
+        .logo h2 { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #e94560, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo p { color: #6b7a8f; font-size: 11px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: #8a9ab0; text-decoration: none; border-radius: 10px; margin-bottom: 4px; }
+        .nav-item i { width: 24px; }
+        .nav-item:hover { background: #2a3342; color: white; }
+        .nav-item.active { background: #e94560; color: white; }
+        .main-content { flex: 1; padding: 32px 40px; }
+        h1 { font-size: 28px; margin-bottom: 32px; color: white; }
+        .profile-card { background: #1a1f2a; border: 1px solid #2a3342; border-radius: 24px; padding: 40px; max-width: 700px; }
+        .profile-header { display: flex; align-items: center; gap: 30px; margin-bottom: 40px; }
+        .avatar-container { position: relative; }
+        .avatar-large { width: 120px; height: 120px; background: linear-gradient(135deg, #e94560, #ff6b6b); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; color: white; font-weight: 600; background-size: cover; }
+        .avatar-upload { position: absolute; bottom: 0; right: 0; width: 36px; height: 36px; background: #2a3342; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #8a9ab0; cursor: pointer; }
+        .avatar-upload:hover { background: #e94560; color: white; }
+        .profile-info h2 { font-size: 28px; color: white; margin-bottom: 8px; }
+        .profile-info .role { background: #e94560; color: white; padding: 4px 16px; border-radius: 30px; font-size: 13px; display: inline-block; }
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; color: #8a9ab0; font-size: 13px; font-weight: 500; margin-bottom: 8px; text-transform: uppercase; }
+        .form-group input { width: 100%; padding: 14px 16px; background: #0f1419; border: 1px solid #2a3342; border-radius: 12px; color: white; font-size: 14px; outline: none; }
+        .form-group input:focus { border-color: #e94560; }
+        .password-strength { margin-top: 8px; }
+        .strength-bar { height: 6px; background: #2a3342; border-radius: 3px; overflow: hidden; }
+        .strength-fill { height: 100%; width: 0%; transition: all 0.3s; }
+        .btn-save { background: linear-gradient(135deg, #e94560, #ff6b6b); color: white; border: none; padding: 16px 32px; border-radius: 14px; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .stats-mini { display: flex; gap: 20px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #2a3342; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 24px; font-weight: 700; color: #e94560; }
+        .stat-label { color: #6b7a8f; font-size: 12px; }
+        .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1f2a; border: 1px solid #e94560; border-radius: 12px; padding: 16px 20px; color: white; display: none; }
+        .toast.show { display: flex; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo"><h2>🔴 TONY-HACK</h2><p>PHISHING SIMULATOR</p></div>
+        <nav style="margin-top:30px;">
+            <a href="/" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/campaigns" class="nav-item"><i class="fas fa-bomb"></i> Email Bomber</a>
+                <a href="/builder" class="nav-item"><i class="fas fa-paint-brush"></i> Builder</a>
+            <a href="/templates" class="nav-item"><i class="fas fa-file-code"></i> Templates</a>
+            <a href="/logs" class="nav-item"><i class="fas fa-history"></i> Logs</a>
+                <div class="nav-divider"></div>
+            <a href="/settings" class="nav-item"><i class="fas fa-cog"></i> Paramètres</a>
+            <a href="/profile" class="nav-item active"><i class="fas fa-user"></i> Profil</a>
+            <a href="#" class="nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+        </nav>
+    </aside>
+    <main class="main-content">
+        <h1><i class="fas fa-user-circle"></i> Mon Profil PRO</h1>
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="avatar-container">
+                    <div class="avatar-large" id="profileAvatar">A</div>
+                    <div class="avatar-upload" id="avatarUpload"><i class="fas fa-camera"></i></div>
+                    <input type="file" id="avatarInput" accept="image/*" style="display:none;">
+                </div>
+                <div class="profile-info">
+                    <h2 id="profileName">Administrateur</h2>
+                    <span class="role"><i class="fas fa-shield-alt"></i> Super Admin PRO</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Nom d'utilisateur</label>
+                <input type="text" id="username" disabled>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="email" value="admin@tony-hack.pro">
+            </div>
+            <div class="form-group">
+                <label>Mot de passe actuel</label>
+                <input type="password" id="currentPass" placeholder="••••••••">
+            </div>
+            <div class="form-group">
+                <label>Nouveau mot de passe</label>
+                <input type="password" id="newPass" placeholder="••••••••">
+                <div class="password-strength"><div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div></div>
+            </div>
+            <div class="form-group">
+                <label>Confirmer</label>
+                <input type="password" id="confirmPass" placeholder="••••••••">
+            </div>
+            <button class="btn-save" id="saveProfile"><i class="fas fa-save"></i> Enregistrer</button>
+            <div class="stats-mini">
+                <div class="stat-item"><div class="stat-value" id="totalLogins">127</div><div class="stat-label">Connexions</div></div>
+                <div class="stat-item"><div class="stat-value" id="totalTemplates">0</div><div class="stat-label">Templates</div></div>
+                <div class="stat-item"><div class="stat-value" id="totalCampaigns">0</div><div class="stat-label">Campagnes</div></div>
+            </div>
+        </div>
+    </main>
+    <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
+    <script>
+        fetch('/api/profile').then(r=>r.json()).then(d=>{
+            document.getElementById('username').value = d.username;
+            document.getElementById('profileName').textContent = d.username;
+            if(d.avatar) document.getElementById('profileAvatar').style.backgroundImage = `url(${d.avatar})`;
+        });
+        fetch('/api/templates/list').then(r=>r.json()).then(d=> document.getElementById('totalTemplates').textContent = d.length);
+        
+        document.getElementById('avatarUpload').addEventListener('click', ()=> document.getElementById('avatarInput').click());
+        document.getElementById('avatarInput').addEventListener('change', async e => {
+            const fd = new FormData(); fd.append('avatar', e.target.files[0]);
+            const r = await fetch('/api/profile/avatar', {method:'POST', body:fd});
+            const d = await r.json();
+            if(d.success) { document.getElementById('profileAvatar').style.backgroundImage = `url(${d.avatar})`; showToast('✅ Avatar mis à jour'); }
+        });
+        
+        document.getElementById('newPass').addEventListener('input', function(){
+            const v = this.value; let s = 0;
+            if(v.length>=8) s+=25; if(v.match(/[a-z]/)) s+=25; if(v.match(/[A-Z]/)) s+=25; if(v.match(/[0-9]|[^a-zA-Z0-9]/)) s+=25;
+            document.getElementById('strengthFill').style.width = s+'%';
+            document.getElementById('strengthFill').style.background = s<=25?'#ef4444':s<=50?'#f59e0b':s<=75?'#3b82f6':'#10b981';
+        });
+        
+        document.getElementById('saveProfile').addEventListener('click', async ()=>{
+            const cur = document.getElementById('currentPass').value;
+            const nw = document.getElementById('newPass').value;
+            const cf = document.getElementById('confirmPass').value;
+            if(nw && nw !== cf) { alert('Mots de passe différents'); return; }
+            if(nw) {
+                const r = await fetch('/api/profile/password', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({current:cur, new:nw})});
+                const d = await r.json();
+                if(!d.success) { alert(d.error); return; }
+            }
+            showToast('✅ Profil mis à jour');
+            document.getElementById('currentPass').value = document.getElementById('newPass').value = document.getElementById('confirmPass').value = '';
+        });
+        
+        function showToast(m){ document.getElementById('toastMsg').textContent = m; document.getElementById('toast').classList.add('show'); setTimeout(()=>document.getElementById('toast').classList.remove('show'),3000); }
+    </script>
+</body>
+</html>
+
+<!-- Modal Déconnexion -->
+<div class="modal-overlay" id="logoutModal" style="display:none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Déconnexion</h2>
+            <button class="modal-close" onclick="closeLogoutModal()">&times;</button>
+        </div>
+        <div class="modal-body"><p>Voulez-vous vraiment vous déconnecter ?</p></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeLogoutModal()">Annuler</button>
+            <button class="btn-confirm" onclick="confirmLogout()">Déconnexion</button>
+        </div>
+    </div>
+</div>
+<style>.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:10000}.modal{background:#1a1f2a;border:2px solid #e94560;border-radius:20px;padding:30px;width:90%;max-width:400px}.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.modal-header h2{color:#fff;font-size:20px}.modal-close{width:32px;height:32px;background:#2a3342;border:none;border-radius:8px;color:#8a9ab0;cursor:pointer;font-size:18px}.modal-body{color:#8a9ab0;margin-bottom:24px}.modal-actions{display:flex;gap:12px;justify-content:flex-end}.btn-cancel{background:#2a3342;color:#8a9ab0;border:none;padding:10px 20px;border-radius:8px;cursor:pointer}.btn-confirm{background:#ef4444;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer}</style>
+<script>function closeLogoutModal(){document.getElementById('logoutModal').style.display='none'}function confirmLogout(){window.location.href='/logout'}document.addEventListener('DOMContentLoaded',function(){const b=document.getElementById('logoutBtn');if(b){b.addEventListener('click',e=>{e.preventDefault();document.getElementById('logoutModal').style.display='flex'})};document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.style.display='none'})})});</script>
